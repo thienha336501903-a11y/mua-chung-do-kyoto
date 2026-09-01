@@ -18,8 +18,8 @@ CREATE TABLE IF NOT EXISTS public.resident_demands (
     dryer_qty INTEGER NOT NULL DEFAULT 0 CHECK (dryer_qty >= 0 AND dryer_qty <= 10),
     dishwasher_qty INTEGER NOT NULL DEFAULT 0 CHECK (dishwasher_qty >= 0 AND dishwasher_qty <= 10),
     note TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('Asia/Ho_Chi_Minh', now()),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('Asia/Ho_Chi_Minh', now())
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Index chống trùng lặp theo số căn hộ (chuẩn hóa chữ in hoa và cắt khoảng trắng)

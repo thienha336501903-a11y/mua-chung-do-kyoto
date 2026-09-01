@@ -211,6 +211,9 @@ export async function submitResidentDemand(input: SubmitDemandPayload): Promise<
     };
   } else {
     // Thêm bản ghi mới
+    const nowIso = new Date().toISOString();
+    payload.created_at = nowIso;
+    payload.updated_at = nowIso;
     const { data: inserted, error: insertError } = await client
       .from('resident_demands')
       .insert(payload)
