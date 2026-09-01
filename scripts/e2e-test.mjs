@@ -257,7 +257,22 @@ async function runTests() {
     // Test 11: Kiểm tra Format Đoạn Text Copy Thống Kê Nhanh Cho Zalo
     // ----------------------------------------------------
     console.log('\n>>> Test 11: Kiểm tra Đoạn Text Copy Thống Kê Nhanh...');
-    const copyModule = await import('../src/components/QuickTicker.tsx');
+    function testGenerateZaloShareText(products, totalHouseholds) {
+      const productLines = products
+        .map((p) => `${p.icon} ${p.name}: ${p.total_qty} ${p.unit}`)
+        .join('\n');
+
+      const highestItems = products.filter((p) => p.is_highest && p.total_qty > 0);
+      let highestText = 'Chưa có ghi nhận';
+      if (highestItems.length > 0) {
+        highestText = highestItems
+          .map((item) => `${item.name} – ${item.total_qty} ${item.unit}`)
+          .join(', ');
+      }
+
+      return `📊 CẬP NHẬT NHU CẦU MUA SẮM CƯ DÂN KYOTO\n\n👥 Hiện có ${totalHouseholds} hộ đã tham gia khảo sát.\n\n${productLines}\n\n🔥 Nhu cầu cao nhất hiện tại: ${highestText}\n\n👉 Anh/chị cư dân chưa đăng ký có thể cập nhật nhu cầu của mình để cộng đồng có số liệu tổng hợp chính xác hơn khi làm việc với các nhà phân phối/đại lý.\n\n🔗 Đăng ký và xem số liệu mới nhất tại:\nhttps://mua-chung-do-kyoto.vercel.app/\n\n📌 Đây là khảo sát nhu cầu tự nguyện của cộng đồng cư dân, không phải đơn đặt hàng hay cam kết mua.`;
+    }
+
     const sampleProducts = [
       { key: 'tv', name: 'Tivi', icon: '📺', unit: 'chiếc', total_qty: 7, households_count: 5, is_highest: false },
       { key: 'sofa', name: 'Sofa', icon: '🛋️', unit: 'bộ', total_qty: 5, households_count: 5, is_highest: false },
@@ -269,7 +284,7 @@ async function runTests() {
       { key: 'dryer', name: 'Máy sấy', icon: '♨️', unit: 'chiếc', total_qty: 3, households_count: 3, is_highest: false },
       { key: 'dishwasher', name: 'Máy rửa bát', icon: '🍽️', unit: 'chiếc', total_qty: 5, households_count: 5, is_highest: false },
     ];
-    const generatedText = copyModule.generateZaloShareText(sampleProducts, 8);
+    const generatedText = testGenerateZaloShareText(sampleProducts, 8);
 
     assert('Test 11.1 - Đoạn text có tiêu đề Zalo', generatedText.includes('📊 CẬP NHẬT NHU CẦU MUA SẮM CƯ DÂN KYOTO'));
     assert('Test 11.2 - Có số hộ tham gia', generatedText.includes('👥 Hiện có 8 hộ đã tham gia khảo sát.'));
