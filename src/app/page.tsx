@@ -77,6 +77,8 @@ export default function HomePage() {
       <QuickTicker
         products={summary.products}
         totalHouseholds={summary.total_households}
+        highestProducts={summary.highest_products}
+        highestQty={summary.highest_quantity}
       />
 
       {/* 3. Hero Section */}

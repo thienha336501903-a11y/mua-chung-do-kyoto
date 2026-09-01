@@ -254,19 +254,44 @@ async function runTests() {
     assert('Test 10.4 - CSV chứa dữ liệu test', csvText.includes(TEST_APT_1));
 
     // ----------------------------------------------------
-    // Test 11: Cleanup toàn bộ Test Data
+    // Test 11: Kiểm tra Format Đoạn Text Copy Thống Kê Nhanh Cho Zalo
     // ----------------------------------------------------
-    console.log('\n>>> Test 11: Dọn dẹp dữ liệu test...');
+    console.log('\n>>> Test 11: Kiểm tra Đoạn Text Copy Thống Kê Nhanh...');
+    const copyModule = await import('../src/components/QuickTicker.tsx');
+    const sampleProducts = [
+      { key: 'tv', name: 'Tivi', icon: '📺', unit: 'chiếc', total_qty: 7, households_count: 5, is_highest: false },
+      { key: 'sofa', name: 'Sofa', icon: '🛋️', unit: 'bộ', total_qty: 5, households_count: 5, is_highest: false },
+      { key: 'curtain', name: 'Rèm', icon: '🪟', unit: 'bộ', total_qty: 8, households_count: 6, is_highest: true },
+      { key: 'drying_rack', name: 'Dàn phơi', icon: '👕', unit: 'bộ', total_qty: 6, households_count: 6, is_highest: false },
+      { key: 'bed', name: 'Giường đóng sẵn', icon: '🛏️', unit: 'chiếc', total_qty: 4, households_count: 3, is_highest: false },
+      { key: 'refrigerator', name: 'Tủ lạnh', icon: '❄️', unit: 'chiếc', total_qty: 7, households_count: 7, is_highest: false },
+      { key: 'washing_machine', name: 'Máy giặt', icon: '🧺', unit: 'chiếc', total_qty: 6, households_count: 6, is_highest: false },
+      { key: 'dryer', name: 'Máy sấy', icon: '♨️', unit: 'chiếc', total_qty: 3, households_count: 3, is_highest: false },
+      { key: 'dishwasher', name: 'Máy rửa bát', icon: '🍽️', unit: 'chiếc', total_qty: 5, households_count: 5, is_highest: false },
+    ];
+    const generatedText = copyModule.generateZaloShareText(sampleProducts, 8);
+
+    assert('Test 11.1 - Đoạn text có tiêu đề Zalo', generatedText.includes('📊 CẬP NHẬT NHU CẦU MUA SẮM CƯ DÂN KYOTO'));
+    assert('Test 11.2 - Có số hộ tham gia', generatedText.includes('👥 Hiện có 8 hộ đã tham gia khảo sát.'));
+    assert('Test 11.3 - Có đủ 9 mặt hàng', generatedText.includes('📺 Tivi: 7 chiếc') && generatedText.includes('🪟 Rèm: 8 bộ') && generatedText.includes('🍽️ Máy rửa bát: 5 chiếc'));
+    assert('Test 11.4 - Có dòng Nhu cầu cao nhất', generatedText.includes('🔥 Nhu cầu cao nhất hiện tại: Rèm – 8 bộ'));
+    assert('Test 11.5 - BẮT BUỘC có URL Production', generatedText.includes('https://mua-chung-do-kyoto.vercel.app/'));
+    assert('Test 11.6 - KHÔNG chứa số căn hộ hoặc ID', !generatedText.includes('apartment_number') && !generatedText.includes('uuid'));
+
+    // ----------------------------------------------------
+    // Test 12: Cleanup toàn bộ Test Data
+    // ----------------------------------------------------
+    console.log('\n>>> Test 12: Dọn dẹp dữ liệu test...');
     const cleanRes = await fetch(`${BASE_URL}/api/admin/demands?cleanup_test=true`, {
       method: 'DELETE',
       headers: { 'x-admin-password': ADMIN_PASSWORD },
     });
     const cleanJson = await cleanRes.json();
-    assert('Test 11.1 - Gọi API dọn dẹp dữ liệu test', cleanRes.status === 200 && cleanJson.success === true, `(Đã xóa ${cleanJson.deletedCount} bản ghi)`);
+    assert('Test 12.1 - Gọi API dọn dẹp dữ liệu test', cleanRes.status === 200 && cleanJson.success === true, `(Đã xóa ${cleanJson.deletedCount} bản ghi)`);
 
     const finalSummaryRes = await fetch(`${BASE_URL}/api/demands/summary`);
     const finalSummaryJson = await finalSummaryRes.json();
-    assert('Test 11.2 - Tổng số hộ trở lại ban đầu', finalSummaryJson.data.total_households === initialHouseholds);
+    assert('Test 12.2 - Tổng số hộ trở lại ban đầu', finalSummaryJson.data.total_households === initialHouseholds);
 
   } catch (err) {
     console.error('Lỗi nghiêm trọng trong quá trình kiểm thử:', err);
