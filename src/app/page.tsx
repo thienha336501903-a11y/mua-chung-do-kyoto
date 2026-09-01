@@ -35,6 +35,7 @@ export default function HomePage() {
   const [successData, setSuccessData] = useState<{
     zalo_name: string;
     apartment_number: string;
+    phone_number?: string;
     items: { key: ProductKey; name: string; icon: string; quantity: number; unit: string }[];
     isUpdate: boolean;
   } | null>(null);
@@ -60,6 +61,7 @@ export default function HomePage() {
   const handleRegistrationSuccess = (submitted: {
     zalo_name: string;
     apartment_number: string;
+    phone_number?: string;
     items: { key: ProductKey; name: string; icon: string; quantity: number; unit: string }[];
     isUpdate: boolean;
   }) => {

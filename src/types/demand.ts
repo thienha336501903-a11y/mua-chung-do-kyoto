@@ -24,6 +24,7 @@ export interface ResidentDemandRecord {
   id: string;
   zalo_name: string;
   apartment_number: string;
+  phone_number?: string | null;
   tv_qty: number;
   sofa_qty: number;
   curtain_qty: number;
@@ -41,6 +42,7 @@ export interface ResidentDemandRecord {
 export interface DemandFormData {
   zalo_name: string;
   apartment_number: string;
+  phone_number: string;
   demands: Record<ProductKey, { selected: boolean; quantity: number }>;
   note?: string;
 }
@@ -66,6 +68,7 @@ export interface DemandSummaryData {
 export interface SubmitDemandPayload {
   zalo_name: string;
   apartment_number: string;
+  phone_number: string;
   tv_qty?: number;
   sofa_qty?: number;
   curtain_qty?: number;

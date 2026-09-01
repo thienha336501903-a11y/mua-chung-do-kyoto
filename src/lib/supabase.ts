@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { PRODUCTS } from './constants';
 import { DemandSummaryData, ProductDemandStat, ProductKey, ResidentDemandRecord, SubmitDemandPayload } from '@/types/demand';
-import { normalizeApartment, sanitizeText } from './utils';
+import { isValidVietnamesePhone, normalizeApartment, normalizePhoneNumber, sanitizeText } from './utils';
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://crphwjizolsgghapyjjv.supabase.co';
 const supabaseServiceKey =
@@ -22,7 +22,7 @@ export function getSupabaseAdmin() {
 
 /**
  * Lấy dữ liệu tổng hợp công khai (Public Summary)
- * TUYỆT ĐỐI KHÔNG SELECT VÀ KHÔNG TRẢ VỀ apartment_number HAY zalo_name
+ * TUYỆT ĐỐI KHÔNG SELECT VÀ KHÔNG TRẢ VỀ apartment_number, phone_number HAY zalo_name
  */
 export async function getPublicDemandSummary(): Promise<DemandSummaryData> {
   const client = getSupabaseAdmin();
@@ -37,14 +37,13 @@ export async function getPublicDemandSummary(): Promise<DemandSummaryData> {
     // Nếu chưa tạo RPC thì query an toàn
   }
 
-  // Query an toàn: CHỈ SELECT các cột số lượng sản phẩm, KHÔNG select apartment_number hay tên
+  // Query an toàn: CHỈ SELECT các cột số lượng sản phẩm, KHÔNG select apartment_number, phone_number hay tên
   const { data, error } = await client
     .from('resident_demands')
     .select('tv_qty, sofa_qty, curtain_qty, drying_rack_qty, bed_qty, refrigerator_qty, washing_machine_qty, dryer_qty, dishwasher_qty');
 
   if (error) {
     console.error('[Supabase getPublicDemandSummary Error]', error);
-    // Nếu bảng chưa có bản ghi hoặc mới tạo, trả về số liệu 0
     return getEmptySummary();
   }
 
@@ -167,6 +166,8 @@ export async function submitResidentDemand(input: SubmitDemandPayload): Promise<
 
   const zaloName = sanitizeText(input.zalo_name || '');
   const apartment = normalizeApartment(input.apartment_number || '');
+  const rawPhone = (input.phone_number || '').trim();
+  const phone = normalizePhoneNumber(rawPhone);
 
   if (!zaloName || zaloName.length < 2 || zaloName.length > 100) {
     return { success: false, isUpdate: false, error: 'Tên Zalo phải từ 2 đến 100 ký tự' };
@@ -176,9 +177,16 @@ export async function submitResidentDemand(input: SubmitDemandPayload): Promise<
     return { success: false, isUpdate: false, error: 'Số căn hộ không hợp lệ (Ví dụ: K5-1208)' };
   }
 
+  // Cho phép tiền tố kiểm thử __TEST_PHONE__ hoặc số điện thoại chuẩn Việt Nam
+  const isTestPhone = rawPhone.includes('__TEST_');
+  if (!rawPhone || (!isTestPhone && !isValidVietnamesePhone(phone))) {
+    return { success: false, isUpdate: false, error: 'Vui lòng nhập số điện thoại hợp lệ (Ví dụ: 0912 345 678)' };
+  }
+
   const payload: any = {
     zalo_name: zaloName,
     apartment_number: apartment,
+    phone_number: isTestPhone ? rawPhone : phone,
     tv_qty: Math.min(Math.max(Number(input.tv_qty) || 0, 0), 10),
     sofa_qty: Math.min(Math.max(Number(input.sofa_qty) || 0, 0), 10),
     curtain_qty: Math.min(Math.max(Number(input.curtain_qty) || 0, 0), 10),
@@ -307,7 +315,8 @@ export async function getAdminDemands(options?: {
     records = records.filter(
       (r) =>
         r.zalo_name.toLowerCase().includes(searchLower) ||
-        r.apartment_number.toLowerCase().includes(searchLower)
+        r.apartment_number.toLowerCase().includes(searchLower) ||
+        (r.phone_number && r.phone_number.toLowerCase().includes(searchLower))
     );
   }
 
@@ -339,6 +348,9 @@ export async function updateDemandRecord(id: string, updates: Partial<ResidentDe
   if (payload.zalo_name) {
     payload.zalo_name = sanitizeText(payload.zalo_name);
   }
+  if (payload.phone_number && !payload.phone_number.includes('__TEST_')) {
+    payload.phone_number = normalizePhoneNumber(payload.phone_number);
+  }
 
   const { data, error } = await client
     .from('resident_demands')
@@ -362,7 +374,7 @@ export async function cleanupTestDemands(): Promise<number> {
   const { data, error } = await client
     .from('resident_demands')
     .delete()
-    .or('zalo_name.ilike.%__TEST_KYOTO_DEMAND__%,apartment_number.ilike.%__TEST%')
+    .or('zalo_name.ilike.%__TEST%,apartment_number.ilike.%__TEST%,phone_number.ilike.%__TEST%')
     .select();
 
   if (error) {

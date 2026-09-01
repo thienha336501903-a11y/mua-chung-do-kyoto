@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { PRODUCTS } from '@/lib/constants';
 import { ProductKey, SubmitDemandPayload } from '@/types/demand';
+import { isValidVietnamesePhone, normalizePhoneNumber } from '@/lib/utils';
 import {
   Shield,
   Send,
@@ -12,13 +13,14 @@ import {
   AlertCircle,
   Sparkles,
   Lock,
-  Info,
+  Phone,
 } from 'lucide-react';
 
 interface RegistrationFormProps {
   onSuccess: (submittedData: {
     zalo_name: string;
     apartment_number: string;
+    phone_number: string;
     items: { key: ProductKey; name: string; icon: string; quantity: number; unit: string }[];
     isUpdate: boolean;
   }) => void;
@@ -27,6 +29,7 @@ interface RegistrationFormProps {
 export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
   const [zaloName, setZaloName] = useState('');
   const [apartmentNumber, setApartmentNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [note, setNote] = useState('');
   const [selectedDemands, setSelectedDemands] = useState<
     Record<ProductKey, { selected: boolean; quantity: number }>
@@ -85,6 +88,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     // Validation
     const trimmedZalo = zaloName.trim();
     const trimmedApt = apartmentNumber.trim().toUpperCase();
+    const rawPhone = phoneNumber.trim();
+    const normalizedPhone = normalizePhoneNumber(rawPhone);
+    const isTestPhone = rawPhone.includes('__TEST_');
 
     if (!trimmedZalo) {
       setErrorMsg('Vui lòng nhập Tên Zalo của bạn');
@@ -93,6 +99,11 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
 
     if (!trimmedApt) {
       setErrorMsg('Vui lòng nhập Số căn hộ (Ví dụ: K5-1208)');
+      return;
+    }
+
+    if (!rawPhone || (!isTestPhone && !isValidVietnamesePhone(normalizedPhone))) {
+      setErrorMsg('Vui lòng nhập số điện thoại hợp lệ (Ví dụ: 0912 345 678)');
       return;
     }
 
@@ -107,6 +118,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       const payload: SubmitDemandPayload = {
         zalo_name: trimmedZalo,
         apartment_number: trimmedApt,
+        phone_number: isTestPhone ? rawPhone : normalizedPhone,
         tv_qty: selectedDemands.tv.selected ? selectedDemands.tv.quantity : 0,
         sofa_qty: selectedDemands.sofa.selected ? selectedDemands.sofa.quantity : 0,
         curtain_qty: selectedDemands.curtain.selected ? selectedDemands.curtain.quantity : 0,
@@ -145,11 +157,11 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
       onSuccess({
         zalo_name: trimmedZalo,
         apartment_number: trimmedApt,
+        phone_number: isTestPhone ? rawPhone : normalizedPhone,
         items: submittedItems,
         isUpdate: !!json.isUpdate,
       });
 
-      // Reset form optional
     } catch (err: any) {
       console.error('[Form Submit Error]', err);
       setErrorMsg(err.message || 'Có lỗi xảy ra, vui lòng thử lại');
@@ -183,9 +195,9 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Section 1: Resident Info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 bg-kyoto-50/50 p-4 sm:p-6 rounded-2xl border border-kyoto-100">
-            {/* Zalo Name */}
+          {/* Section 1: Resident Info (3 Columns on Desktop, 1 Column on Mobile) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 bg-kyoto-50/50 p-4 sm:p-6 rounded-2xl border border-kyoto-100">
+            {/* 1. Zalo Name */}
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-1.5">
                 Tên Zalo <span className="text-red-500">*</span>
@@ -197,14 +209,14 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 placeholder="Nhập tên Zalo của bạn"
                 required
                 maxLength={100}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-kyoto-700 focus:border-transparent text-sm sm:text-base transition-all font-medium"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-kyoto-700 focus:border-transparent text-sm sm:text-base transition-all font-medium shadow-sm"
               />
-              <p className="text-[11px] text-gray-500 mt-1">
+              <p className="text-[11px] text-gray-500 mt-1.5">
                 Tên hiển thị trên nhóm Zalo cư dân
               </p>
             </div>
 
-            {/* Apartment Number */}
+            {/* 2. Apartment Number */}
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-1.5">
                 Số căn hộ <span className="text-red-500">*</span>
@@ -216,12 +228,33 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                 placeholder="Ví dụ: K5-1208"
                 required
                 maxLength={30}
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-kyoto-700 focus:border-transparent text-sm sm:text-base uppercase tracking-wider transition-all font-bold"
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-kyoto-700 focus:border-transparent text-sm sm:text-base uppercase tracking-wider transition-all font-bold shadow-sm"
               />
-              {/* Privacy Badge */}
-              <div className="flex items-center gap-1.5 text-[11px] text-emerald-800 font-semibold mt-1.5 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/80">
+              {/* Privacy Badge for Apartment */}
+              <div className="flex items-center gap-1 text-[11px] text-emerald-800 font-semibold mt-1.5 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/80">
                 <Lock className="w-3 h-3 text-emerald-600 flex-shrink-0" />
-                <span>Bảo mật tuyệt đối — Số căn KHÔNG hiển thị công khai</span>
+                <span>Bảo mật tuyệt đối – Số căn KHÔNG hiển thị công khai</span>
+              </div>
+            </div>
+
+            {/* 3. Phone Number */}
+            <div>
+              <label className="block text-sm font-bold text-gray-900 mb-1.5">
+                Số điện thoại <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Ví dụ: 0912 345 678"
+                required
+                maxLength={20}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-kyoto-700 focus:border-transparent text-sm sm:text-base tracking-wide transition-all font-bold shadow-sm"
+              />
+              {/* Privacy Badge for Phone */}
+              <div className="flex items-center gap-1 text-[11px] text-emerald-800 font-semibold mt-1.5 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200/80">
+                <Lock className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                <span>🔒 Bảo mật tuyệt đối – Chỉ Admin mới nhìn thấy số điện thoại</span>
               </div>
             </div>
           </div>

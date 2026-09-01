@@ -1,13 +1,14 @@
 /**
  * Kịch bản kiểm thử E2E tự động toàn diện cho dự án
- * "NHU CẦU MUA SẮM CƯ DÂN KYOTO"
+ * "NHU CẦU MUA SẮM CƯ DÂN KYOTO" (Bao gồm kiểm tra Số Điện Thoại & Bảo Mật)
  */
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'kyoto2026@admin';
 
-const TEST_ZALO_1 = '__TEST_KYOTO_DEMAND__ Nguyen Van A';
+const TEST_ZALO_1 = '__TEST_PHONE_KYOTO__ Nguyen Van A';
 const TEST_APT_1 = '__TEST_0001__';
+const TEST_PHONE_1 = '0912345678';
 
 async function runTests() {
   console.log('====================================================');
@@ -42,8 +43,8 @@ async function runTests() {
         homeHtml.includes('NHU C&#x1EA6;U MUA S&#x1EAF;M C&#x1AF; D&#xC2;N KYOTO')
     );
     assert(
-      'Test 1.3 - Form có Tên Zalo & Số căn hộ',
-      homeHtml.includes('Tên Zalo') && homeHtml.includes('Số căn')
+      'Test 1.3 - Form có Tên Zalo, Số căn hộ & Số điện thoại',
+      homeHtml.includes('Tên Zalo') && homeHtml.includes('Số căn') && homeHtml.includes('Số điện thoại')
     );
     assert(
       'Test 2.1 - Mobile First Viewport Meta',
@@ -58,7 +59,7 @@ async function runTests() {
     const valRes1 = await fetch(`${BASE_URL}/api/demands/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zalo_name: '', apartment_number: TEST_APT_1, tv_qty: 1 }),
+      body: JSON.stringify({ zalo_name: '', apartment_number: TEST_APT_1, phone_number: TEST_PHONE_1, tv_qty: 1 }),
     });
     const valJson1 = await valRes1.json();
     assert('Test 3.1 - Chặn Tên Zalo rỗng', valRes1.status === 400 && valJson1.success === false);
@@ -67,19 +68,37 @@ async function runTests() {
     const valRes2 = await fetch(`${BASE_URL}/api/demands/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zalo_name: TEST_ZALO_1, apartment_number: '', tv_qty: 1 }),
+      body: JSON.stringify({ zalo_name: TEST_ZALO_1, apartment_number: '', phone_number: TEST_PHONE_1, tv_qty: 1 }),
     });
     const valJson2 = await valRes2.json();
     assert('Test 3.2 - Chặn Số căn hộ rỗng', valRes2.status === 400 && valJson2.success === false);
 
-    // Không chọn sản phẩm nào (tất cả = 0)
+    // Thiếu số điện thoại
     const valRes3 = await fetch(`${BASE_URL}/api/demands/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zalo_name: TEST_ZALO_1, apartment_number: TEST_APT_1 }),
+      body: JSON.stringify({ zalo_name: TEST_ZALO_1, apartment_number: TEST_APT_1, phone_number: '', tv_qty: 1 }),
     });
     const valJson3 = await valRes3.json();
-    assert('Test 3.3 - Chặn khi không chọn sản phẩm nào', valRes3.status === 400 && valJson3.success === false);
+    assert('Test 3.3 - Chặn Số điện thoại rỗng', valRes3.status === 400 && valJson3.success === false);
+
+    // Số điện thoại không hợp lệ
+    const valRes4 = await fetch(`${BASE_URL}/api/demands/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zalo_name: TEST_ZALO_1, apartment_number: TEST_APT_1, phone_number: '12345', tv_qty: 1 }),
+    });
+    const valJson4 = await valRes4.json();
+    assert('Test 3.4 - Chặn Số điện thoại sai định dạng', valRes4.status === 400 && valJson4.success === false);
+
+    // Không chọn sản phẩm nào (tất cả = 0)
+    const valRes5 = await fetch(`${BASE_URL}/api/demands/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zalo_name: TEST_ZALO_1, apartment_number: TEST_APT_1, phone_number: TEST_PHONE_1 }),
+    });
+    const valJson5 = await valRes5.json();
+    assert('Test 3.5 - Chặn khi không chọn sản phẩm nào', valRes5.status === 400 && valJson5.success === false);
 
     // ----------------------------------------------------
     // Dọn dẹp dữ liệu test cũ nếu có
@@ -107,6 +126,7 @@ async function runTests() {
       body: JSON.stringify({
         zalo_name: TEST_ZALO_1,
         apartment_number: TEST_APT_1,
+        phone_number: '  0912 345 678  ', // Test normalize khoảng trắng
         tv_qty: 2,
         sofa_qty: 1,
         refrigerator_qty: 1,
@@ -141,9 +161,9 @@ async function runTests() {
     assert('Test 5.5 - Máy giặt có nhu cầu >= 1', washerStat.total_qty >= 1);
 
     // ----------------------------------------------------
-    // Test 6: BẢO MẬT TUYỆT ĐỐI SỐ CĂN HỘ (CRITICAL PRIVACY TEST)
+    // Test 6: BẢO MẬT TUYỆT ĐỐI SỐ CĂN HỘ & SỐ ĐIỆN THOẠI (CRITICAL PRIVACY TEST)
     // ----------------------------------------------------
-    console.log('\n>>> Test 6: KIỂM TRA BẢO MẬT QUYỀN RIÊNG TƯ SỐ CĂN HỘ (CRITICAL)...');
+    console.log('\n>>> Test 6: KIỂM TRA BẢO MẬT QUYỀN RIÊNG TƯ SỐ CĂN & SỐ ĐIỆN THOẠI (CRITICAL)...');
     const summaryRawText = JSON.stringify(statJson);
     assert(
       'Test 6.1 - API Public KHÔNG chứa trường "apartment_number"',
@@ -152,6 +172,14 @@ async function runTests() {
     assert(
       'Test 6.2 - API Public KHÔNG chứa số căn test "' + TEST_APT_1 + '"',
       !summaryRawText.includes(TEST_APT_1)
+    );
+    assert(
+      'Test 6.3 - API Public KHÔNG chứa trường "phone_number"',
+      !summaryRawText.includes('phone_number')
+    );
+    assert(
+      'Test 6.4 - API Public KHÔNG chứa số điện thoại test "0912345678"',
+      !summaryRawText.includes(TEST_PHONE_1)
     );
 
     // ----------------------------------------------------
@@ -165,6 +193,7 @@ async function runTests() {
       body: JSON.stringify({
         zalo_name: TEST_ZALO_1,
         apartment_number: `  ${TEST_APT_1.toLowerCase()}  `, // Test trim & uppercase
+        phone_number: '0912345678',
         tv_qty: 3,
         refrigerator_qty: 2,
         dryer_qty: 1,
@@ -209,7 +238,7 @@ async function runTests() {
     const adminToken = loginJson.token;
     assert('Test 8.3 - Đăng nhập Admin thành công', correctLogin.status === 200 && !!adminToken);
 
-    // Admin lấy danh sách chi tiết (thấy số căn)
+    // Admin lấy danh sách chi tiết (thấy số căn & số điện thoại)
     const adminListRes = await fetch(`${BASE_URL}/api/admin/demands`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
     });
@@ -219,22 +248,29 @@ async function runTests() {
     const testRecordInAdmin = adminListJson.data.find(d => d.apartment_number === TEST_APT_1);
     assert('Test 8.5 - Admin nhìn thấy đúng Số căn hộ "' + TEST_APT_1 + '"', !!testRecordInAdmin);
     assert('Test 8.6 - Admin nhìn thấy đúng Tên Zalo "' + TEST_ZALO_1 + '"', testRecordInAdmin?.zalo_name === TEST_ZALO_1);
+    assert('Test 8.7 - Admin nhìn thấy đúng Số điện thoại "' + TEST_PHONE_1 + '"', testRecordInAdmin?.phone_number === TEST_PHONE_1);
 
     // ----------------------------------------------------
     // Test 9: Admin Tìm kiếm & Lọc sản phẩm
     // ----------------------------------------------------
     console.log('\n>>> Test 9: Kiểm tra Tìm kiếm & Lọc Admin...');
-    const searchRes = await fetch(`${BASE_URL}/api/admin/demands?search=${encodeURIComponent(TEST_APT_1)}`, {
+    const searchAptRes = await fetch(`${BASE_URL}/api/admin/demands?search=${encodeURIComponent(TEST_APT_1)}`, {
       headers: { 'x-admin-password': ADMIN_PASSWORD },
     });
-    const searchJson = await searchRes.json();
-    assert('Test 9.1 - Tìm kiếm theo số căn test', searchJson.data?.length >= 1);
+    const searchAptJson = await searchAptRes.json();
+    assert('Test 9.1 - Tìm kiếm theo số căn test', searchAptJson.data?.length >= 1);
+
+    const searchPhoneRes = await fetch(`${BASE_URL}/api/admin/demands?search=${encodeURIComponent(TEST_PHONE_1)}`, {
+      headers: { 'x-admin-password': ADMIN_PASSWORD },
+    });
+    const searchPhoneJson = await searchPhoneRes.json();
+    assert('Test 9.2 - Tìm kiếm theo số điện thoại test', searchPhoneJson.data?.some(d => d.phone_number === TEST_PHONE_1));
 
     const filterRes = await fetch(`${BASE_URL}/api/admin/demands?product=refrigerator`, {
       headers: { 'x-admin-password': ADMIN_PASSWORD },
     });
     const filterJson = await filterRes.json();
-    assert('Test 9.2 - Lọc theo sản phẩm Tủ lạnh', filterJson.data?.every(d => d.refrigerator_qty > 0));
+    assert('Test 9.3 - Lọc theo sản phẩm Tủ lạnh', filterJson.data?.every(d => d.refrigerator_qty > 0));
 
     // ----------------------------------------------------
     // Test 10: Admin Export CSV
@@ -250,8 +286,8 @@ async function runTests() {
 
     assert('Test 10.1 - Xuất CSV thành công HTTP 200', csvRes.status === 200);
     assert('Test 10.2 - CSV có BOM UTF-8 (0xEF, 0xBB, 0xBF)', hasBom === true);
-    assert('Test 10.3 - CSV chứa tiêu đề cột tiếng Việt', csvText.includes('Tên Zalo') && csvText.includes('Số căn hộ'));
-    assert('Test 10.4 - CSV chứa dữ liệu test', csvText.includes(TEST_APT_1));
+    assert('Test 10.3 - CSV chứa tiêu đề cột tiếng Việt gồm Số điện thoại', csvText.includes('Tên Zalo') && csvText.includes('Số căn hộ') && csvText.includes('Số điện thoại'));
+    assert('Test 10.4 - CSV chứa dữ liệu test số điện thoại', csvText.includes(TEST_PHONE_1));
 
     // ----------------------------------------------------
     // Test 11: Kiểm tra Format Đoạn Text Copy Thống Kê Nhanh Cho Zalo
@@ -292,6 +328,7 @@ async function runTests() {
     assert('Test 11.4 - Có dòng Nhu cầu cao nhất', generatedText.includes('🔥 Nhu cầu cao nhất hiện tại: Rèm – 8 bộ'));
     assert('Test 11.5 - BẮT BUỘC có URL Production', generatedText.includes('https://mua-chung-do-kyoto.vercel.app/'));
     assert('Test 11.6 - KHÔNG chứa số căn hộ hoặc ID', !generatedText.includes('apartment_number') && !generatedText.includes('uuid'));
+    assert('Test 11.7 - KHÔNG chứa số điện thoại hoặc phone_number', !generatedText.includes('phone_number') && !generatedText.includes(TEST_PHONE_1));
 
     // ----------------------------------------------------
     // Test 12: Cleanup toàn bộ Test Data

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS public.resident_demands (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     zalo_name TEXT NOT NULL,
     apartment_number TEXT NOT NULL,
+    phone_number TEXT,
     tv_qty INTEGER NOT NULL DEFAULT 0 CHECK (tv_qty >= 0 AND tv_qty <= 10),
     sofa_qty INTEGER NOT NULL DEFAULT 0 CHECK (sofa_qty >= 0 AND sofa_qty <= 10),
     curtain_qty INTEGER NOT NULL DEFAULT 0 CHECK (curtain_qty >= 0 AND curtain_qty <= 10),
@@ -26,6 +27,7 @@ ON public.resident_demands (upper(trim(apartment_number)));
 
 -- Index hỗ trợ tìm kiếm Admin và sắp xếp
 CREATE INDEX IF NOT EXISTS idx_resident_demands_zalo ON public.resident_demands (lower(trim(zalo_name)));
+CREATE INDEX IF NOT EXISTS idx_resident_demands_phone ON public.resident_demands (lower(trim(phone_number)));
 CREATE INDEX IF NOT EXISTS idx_resident_demands_created ON public.resident_demands (created_at DESC);
 
 -- Kích hoạt Row Level Security (RLS) để bảo vệ tuyệt đối dữ liệu riêng tư
