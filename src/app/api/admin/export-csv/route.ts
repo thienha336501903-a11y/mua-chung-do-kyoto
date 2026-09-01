@@ -42,31 +42,19 @@ export async function GET(req: NextRequest) {
     };
 
     const rows = records.map((r, index) => {
-      const totalQty =
-        (r.tv_qty || 0) +
-        (r.sofa_qty || 0) +
-        (r.curtain_qty || 0) +
-        (r.drying_rack_qty || 0) +
-        (r.bed_qty || 0) +
-        (r.refrigerator_qty || 0) +
-        (r.washing_machine_qty || 0) +
-        (r.dryer_qty || 0) +
-        (r.dishwasher_qty || 0);
+      let totalQty = 0;
+      const productValues = PRODUCTS.map((p) => {
+        const qty = Number((r as any)[p.dbField]) || 0;
+        totalQty += qty;
+        return qty;
+      });
 
       return [
         index + 1,
         escapeCsv(r.zalo_name),
         escapeCsv(r.apartment_number),
         escapeCsv(r.phone_number || ''),
-        r.tv_qty || 0,
-        r.sofa_qty || 0,
-        r.curtain_qty || 0,
-        r.drying_rack_qty || 0,
-        r.bed_qty || 0,
-        r.refrigerator_qty || 0,
-        r.washing_machine_qty || 0,
-        r.dryer_qty || 0,
-        r.dishwasher_qty || 0,
+        ...productValues,
         totalQty,
         escapeCsv(r.note || ''),
         escapeCsv(formatDateTimeVietnam(r.created_at)),

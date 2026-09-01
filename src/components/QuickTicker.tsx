@@ -114,7 +114,7 @@ export default function QuickTicker({
               <React.Fragment key={item.key}>
                 <div className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/15 px-2.5 py-1 rounded-md transition-colors">
                   <span>{item.icon}</span>
-                  <span className="font-medium text-gray-200">{item.name}</span>
+                  <span className="font-medium text-gray-200">{item.shortName || item.name}</span>
                   <span className="font-bold text-champagne-300">
                     {item.total_qty}
                   </span>

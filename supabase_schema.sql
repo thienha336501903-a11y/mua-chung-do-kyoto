@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.resident_demands (
     curtain_qty INTEGER NOT NULL DEFAULT 0 CHECK (curtain_qty >= 0 AND curtain_qty <= 10),
     drying_rack_qty INTEGER NOT NULL DEFAULT 0 CHECK (drying_rack_qty >= 0 AND drying_rack_qty <= 10),
     bed_qty INTEGER NOT NULL DEFAULT 0 CHECK (bed_qty >= 0 AND bed_qty <= 10),
+    dining_table_set_qty INTEGER NOT NULL DEFAULT 0 CHECK (dining_table_set_qty >= 0 AND dining_table_set_qty <= 10),
     refrigerator_qty INTEGER NOT NULL DEFAULT 0 CHECK (refrigerator_qty >= 0 AND refrigerator_qty <= 10),
     washing_machine_qty INTEGER NOT NULL DEFAULT 0 CHECK (washing_machine_qty >= 0 AND washing_machine_qty <= 10),
     dryer_qty INTEGER NOT NULL DEFAULT 0 CHECK (dryer_qty >= 0 AND dryer_qty <= 10),

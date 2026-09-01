@@ -141,17 +141,10 @@ export default function AdminDashboardPage() {
 
   // Calculated Stats
   const summaryStats = useMemo(() => {
-    const stats: Record<ProductKey, { totalQty: number; households: number }> = {
-      tv: { totalQty: 0, households: 0 },
-      sofa: { totalQty: 0, households: 0 },
-      curtain: { totalQty: 0, households: 0 },
-      drying_rack: { totalQty: 0, households: 0 },
-      bed: { totalQty: 0, households: 0 },
-      refrigerator: { totalQty: 0, households: 0 },
-      washing_machine: { totalQty: 0, households: 0 },
-      dryer: { totalQty: 0, households: 0 },
-      dishwasher: { totalQty: 0, households: 0 },
-    };
+    const stats = {} as Record<ProductKey, { totalQty: number; households: number }>;
+    PRODUCTS.forEach((p) => {
+      stats[p.key] = { totalQty: 0, households: 0 };
+    });
 
     demands.forEach((d) => {
       PRODUCTS.forEach((p) => {
@@ -423,6 +416,7 @@ export default function AdminDashboardPage() {
                   <th className="py-3 px-2 text-center" title="Rèm">🪟 Rèm</th>
                   <th className="py-3 px-2 text-center" title="Dàn phơi">👕 Phơi</th>
                   <th className="py-3 px-2 text-center" title="Giường">🛏️ Giường</th>
+                  <th className="py-3 px-2 text-center" title="Bộ bàn ghế ăn">🍽️ Bàn Ăn</th>
                   <th className="py-3 px-2 text-center" title="Tủ lạnh">❄️ Tủ Lạnh</th>
                   <th className="py-3 px-2 text-center" title="Máy giặt">🧺 Giặt</th>
                   <th className="py-3 px-2 text-center" title="Máy sấy">♨️ Sấy</th>
@@ -434,7 +428,7 @@ export default function AdminDashboardPage() {
               <tbody className="divide-y divide-gray-100">
                 {filteredDemands.length === 0 ? (
                   <tr>
-                    <td colSpan={15} className="py-10 text-center text-gray-500 font-medium">
+                    <td colSpan={16} className="py-10 text-center text-gray-500 font-medium">
                       {search
                         ? `Không tìm thấy cư dân nào khớp với từ khóa "${search}"`
                         : 'Chưa có bản ghi khảo sát nào'}
@@ -500,6 +494,15 @@ export default function AdminDashboardPage() {
                         {record.bed_qty > 0 ? (
                           <span className="font-extrabold text-kyoto-900 bg-kyoto-50 px-1.5 py-0.5 rounded border border-kyoto-200">
                             {record.bed_qty}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-2 text-center">
+                        {record.dining_table_set_qty > 0 ? (
+                          <span className="font-extrabold text-kyoto-900 bg-kyoto-50 px-1.5 py-0.5 rounded border border-kyoto-200">
+                            {record.dining_table_set_qty}
                           </span>
                         ) : (
                           <span className="text-gray-300">-</span>

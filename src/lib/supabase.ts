@@ -27,20 +27,11 @@ export function getSupabaseAdmin() {
 export async function getPublicDemandSummary(): Promise<DemandSummaryData> {
   const client = getSupabaseAdmin();
 
-  // Thử gọi hàm RPC get_demand_summary trước nếu có
-  try {
-    const { data: rpcData, error: rpcError } = await client.rpc('get_demand_summary');
-    if (!rpcError && rpcData) {
-      return formatRpcSummary(rpcData);
-    }
-  } catch (err) {
-    // Nếu chưa tạo RPC thì query an toàn
-  }
-
   // Query an toàn: CHỈ SELECT các cột số lượng sản phẩm, KHÔNG select apartment_number, phone_number hay tên
+  const selectColumns = PRODUCTS.map((p) => p.dbField).join(', ');
   const { data, error } = await client
     .from('resident_demands')
-    .select('tv_qty, sofa_qty, curtain_qty, drying_rack_qty, bed_qty, refrigerator_qty, washing_machine_qty, dryer_qty, dishwasher_qty');
+    .select(selectColumns);
 
   if (error) {
     console.error('[Supabase getPublicDemandSummary Error]', error);
@@ -50,13 +41,14 @@ export async function getPublicDemandSummary(): Promise<DemandSummaryData> {
   const rows = data || [];
   const total_households = rows.length;
 
-  // Tính tổng số lượng và số hộ có nhu cầu từng loại
+  // Khởi tạo statsMap linh hoạt theo PRODUCTS
   const statsMap: Record<ProductKey, { total_qty: number; households_count: number }> = {
     tv: { total_qty: 0, households_count: 0 },
     sofa: { total_qty: 0, households_count: 0 },
     curtain: { total_qty: 0, households_count: 0 },
     drying_rack: { total_qty: 0, households_count: 0 },
     bed: { total_qty: 0, households_count: 0 },
+    dining_table_set: { total_qty: 0, households_count: 0 },
     refrigerator: { total_qty: 0, households_count: 0 },
     washing_machine: { total_qty: 0, households_count: 0 },
     dryer: { total_qty: 0, households_count: 0 },
@@ -67,6 +59,9 @@ export async function getPublicDemandSummary(): Promise<DemandSummaryData> {
     PRODUCTS.forEach((p) => {
       const qty = Number(row[p.dbField]) || 0;
       if (qty > 0) {
+        if (!statsMap[p.key]) {
+          statsMap[p.key] = { total_qty: 0, households_count: 0 };
+        }
         statsMap[p.key].total_qty += qty;
         statsMap[p.key].households_count += 1;
       }
@@ -76,16 +71,18 @@ export async function getPublicDemandSummary(): Promise<DemandSummaryData> {
   // Tìm sản phẩm có tổng nhu cầu cao nhất
   let maxQty = 0;
   PRODUCTS.forEach((p) => {
-    if (statsMap[p.key].total_qty > maxQty) {
-      maxQty = statsMap[p.key].total_qty;
+    const qty = statsMap[p.key]?.total_qty || 0;
+    if (qty > maxQty) {
+      maxQty = qty;
     }
   });
 
   const products: ProductDemandStat[] = PRODUCTS.map((p) => {
-    const stat = statsMap[p.key];
+    const stat = statsMap[p.key] || { total_qty: 0, households_count: 0 };
     return {
       key: p.key,
       name: p.name,
+      shortName: p.shortName,
       icon: p.icon,
       unit: p.unit,
       total_qty: stat.total_qty,
@@ -105,42 +102,13 @@ export async function getPublicDemandSummary(): Promise<DemandSummaryData> {
   };
 }
 
-function formatRpcSummary(rpc: any): DemandSummaryData {
-  let maxQty = 0;
-  PRODUCTS.forEach((p) => {
-    const q = rpc[p.key]?.total_qty || 0;
-    if (q > maxQty) maxQty = q;
-  });
-
-  const products: ProductDemandStat[] = PRODUCTS.map((p) => {
-    const q = rpc[p.key]?.total_qty || 0;
-    const h = rpc[p.key]?.households_count || 0;
-    return {
-      key: p.key,
-      name: p.name,
-      icon: p.icon,
-      unit: p.unit,
-      total_qty: q,
-      households_count: h,
-      is_highest: maxQty > 0 && q === maxQty,
-    };
-  });
-
-  return {
-    total_households: rpc.total_households || 0,
-    products,
-    highest_quantity: maxQty,
-    highest_products: products.filter((p) => p.is_highest).map((p) => p.name),
-    updated_at: rpc.updated_at || new Date().toISOString(),
-  };
-}
-
 function getEmptySummary(): DemandSummaryData {
   return {
     total_households: 0,
     products: PRODUCTS.map((p) => ({
       key: p.key,
       name: p.name,
+      shortName: p.shortName,
       icon: p.icon,
       unit: p.unit,
       total_qty: 0,
@@ -192,6 +160,7 @@ export async function submitResidentDemand(input: SubmitDemandPayload): Promise<
     curtain_qty: Math.min(Math.max(Number(input.curtain_qty) || 0, 0), 10),
     drying_rack_qty: Math.min(Math.max(Number(input.drying_rack_qty) || 0, 0), 10),
     bed_qty: Math.min(Math.max(Number(input.bed_qty) || 0, 0), 10),
+    dining_table_set_qty: Math.min(Math.max(Number(input.dining_table_set_qty) || 0, 0), 10),
     refrigerator_qty: Math.min(Math.max(Number(input.refrigerator_qty) || 0, 0), 10),
     washing_machine_qty: Math.min(Math.max(Number(input.washing_machine_qty) || 0, 0), 10),
     dryer_qty: Math.min(Math.max(Number(input.dryer_qty) || 0, 0), 10),
@@ -201,16 +170,10 @@ export async function submitResidentDemand(input: SubmitDemandPayload): Promise<
   };
 
   // Kiểm tra ít nhất 1 sản phẩm có số lượng > 0
-  const totalItems =
-    payload.tv_qty +
-    payload.sofa_qty +
-    payload.curtain_qty +
-    payload.drying_rack_qty +
-    payload.bed_qty +
-    payload.refrigerator_qty +
-    payload.washing_machine_qty +
-    payload.dryer_qty +
-    payload.dishwasher_qty;
+  let totalItems = 0;
+  PRODUCTS.forEach((p) => {
+    totalItems += Number(payload[p.dbField]) || 0;
+  });
 
   if (totalItems <= 0) {
     return { success: false, isUpdate: false, error: 'Vui lòng chọn ít nhất 1 sản phẩm bạn có nhu cầu mua' };

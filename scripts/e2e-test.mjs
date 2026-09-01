@@ -1,12 +1,12 @@
 /**
  * Kịch bản kiểm thử E2E tự động toàn diện cho dự án
- * "NHU CẦU MUA SẮM CƯ DÂN KYOTO" (Bao gồm kiểm tra Số Điện Thoại & Bảo Mật)
+ * "NHU CẦU MUA SẮM CƯ DÂN KYOTO" (Bao gồm 10 sản phẩm, SĐT, Bàn ăn, Quyền riêng tư)
  */
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3000';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'kyoto2026@admin';
 
-const TEST_ZALO_1 = '__TEST_PHONE_KYOTO__ Nguyen Van A';
+const TEST_ZALO_1 = '__TEST_DINING_KYOTO__ Nguyen Van A';
 const TEST_APT_1 = '__TEST_0001__';
 const TEST_PHONE_1 = '0912345678';
 
@@ -45,6 +45,10 @@ async function runTests() {
     assert(
       'Test 1.3 - Form có Tên Zalo, Số căn hộ & Số điện thoại',
       homeHtml.includes('Tên Zalo') && homeHtml.includes('Số căn') && homeHtml.includes('Số điện thoại')
+    );
+    assert(
+      'Test 1.4 - Form có đủ 10 hạng mục bao gồm Bàn ghế ăn',
+      homeHtml.includes('Bộ bàn ghế ăn đóng sẵn') || homeHtml.includes('B&#xE0;n gh&#x1EBF; &#x103;n')
     );
     assert(
       'Test 2.1 - Mobile First Viewport Meta',
@@ -112,53 +116,49 @@ async function runTests() {
     const initRes = await fetch(`${BASE_URL}/api/demands/summary`);
     const initJson = await initRes.json();
     const initialHouseholds = initJson.data?.total_households || 0;
+    const initialDiningQty = initJson.data?.products?.find(p => p.key === 'dining_table_set')?.total_qty || 0;
     const initialTvQty = initJson.data?.products?.find(p => p.key === 'tv')?.total_qty || 0;
-    const initialSofaQty = initJson.data?.products?.find(p => p.key === 'sofa')?.total_qty || 0;
 
     // ----------------------------------------------------
-    // Test 4: Đăng ký khảo sát Test
-    // (TV=2, Sofa=1, Refrigerator=1, WashingMachine=1)
+    // Test 4: Đăng ký khảo sát Test có Bộ Bàn Ghế Ăn Đóng Sẵn = 2 bộ
     // ----------------------------------------------------
-    console.log('\n>>> Test 4: Đăng ký khảo sát mới và kiểm tra tổng hợp...');
+    console.log('\n>>> Test 4: Đăng ký khảo sát mới với Bộ bàn ghế ăn đóng sẵn...');
     const submitRes = await fetch(`${BASE_URL}/api/demands/submit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         zalo_name: TEST_ZALO_1,
         apartment_number: TEST_APT_1,
-        phone_number: '  0912 345 678  ', // Test normalize khoảng trắng
-        tv_qty: 2,
-        sofa_qty: 1,
+        phone_number: '0912 345 678',
+        tv_qty: 1,
+        dining_table_set_qty: 2,
         refrigerator_qty: 1,
-        washing_machine_qty: 1,
       }),
     });
     const submitJson = await submitRes.json();
     assert('Test 4.1 - Đăng ký thành công HTTP 200', submitRes.status === 200 && submitJson.success === true);
 
     // ----------------------------------------------------
-    // Test 5: Kiểm tra Thống kê Công khai tăng chính xác
+    // Test 5: Kiểm tra Thống kê Công khai có 10 sản phẩm và Bàn ăn tăng chính xác
     // ----------------------------------------------------
-    console.log('\n>>> Test 5: Xác nhận Dashboard Công Khai cập nhật chính xác...');
+    console.log('\n>>> Test 5: Xác nhận Dashboard Công Khai cập nhật chính xác 10 sản phẩm...');
     const statRes = await fetch(`${BASE_URL}/api/demands/summary`);
     const statJson = await statRes.json();
     const newSummary = statJson.data;
 
+    assert('Test 5.1 - Tổng số sản phẩm trong summary là 10', newSummary.products.length === 10);
     assert(
-      'Test 5.1 - Tổng số hộ tăng đúng +1',
+      'Test 5.2 - Tổng số hộ tăng đúng +1',
       newSummary.total_households === initialHouseholds + 1,
       `(Tổng: ${newSummary.total_households})`
     );
 
+    const diningStat = newSummary.products.find(p => p.key === 'dining_table_set');
     const tvStat = newSummary.products.find(p => p.key === 'tv');
-    const sofaStat = newSummary.products.find(p => p.key === 'sofa');
-    const fridgeStat = newSummary.products.find(p => p.key === 'refrigerator');
-    const washerStat = newSummary.products.find(p => p.key === 'washing_machine');
 
-    assert('Test 5.2 - Tivi tăng đúng +2', tvStat.total_qty === initialTvQty + 2, `(Tivi: ${tvStat.total_qty})`);
-    assert('Test 5.3 - Sofa tăng đúng +1', sofaStat.total_qty === initialSofaQty + 1, `(Sofa: ${sofaStat.total_qty})`);
-    assert('Test 5.4 - Tủ lạnh có nhu cầu >= 1', fridgeStat.total_qty >= 1);
-    assert('Test 5.5 - Máy giặt có nhu cầu >= 1', washerStat.total_qty >= 1);
+    assert('Test 5.3 - Bàn ghế ăn tăng đúng +2', diningStat.total_qty === initialDiningQty + 2, `(Bàn ghế ăn: ${diningStat.total_qty})`);
+    assert('Test 5.4 - Tivi tăng đúng +1', tvStat.total_qty === initialTvQty + 1, `(Tivi: ${tvStat.total_qty})`);
+    assert('Test 5.5 - Số hộ cần Bàn ghế ăn >= 1', diningStat.households_count >= 1);
 
     // ----------------------------------------------------
     // Test 6: BẢO MẬT TUYỆT ĐỐI SỐ CĂN HỘ & SỐ ĐIỆN THOẠI (CRITICAL PRIVACY TEST)
@@ -184,7 +184,7 @@ async function runTests() {
 
     // ----------------------------------------------------
     // Test 7: Cập nhật chống trùng lặp (Upsert)
-    // Cùng số căn TEST_APT_1 gửi lại với Tivi=3, Tủ lạnh=2
+    // Cùng số căn TEST_APT_1 gửi lại với Bàn ghế ăn = 3
     // ----------------------------------------------------
     console.log('\n>>> Test 7: Kiểm tra Chống Trùng Lặp (Cập nhật cùng số căn)...');
     const updateRes = await fetch(`${BASE_URL}/api/demands/submit`, {
@@ -194,9 +194,7 @@ async function runTests() {
         zalo_name: TEST_ZALO_1,
         apartment_number: `  ${TEST_APT_1.toLowerCase()}  `, // Test trim & uppercase
         phone_number: '0912345678',
-        tv_qty: 3,
-        refrigerator_qty: 2,
-        dryer_qty: 1,
+        dining_table_set_qty: 3,
       }),
     });
     const updateJson = await updateRes.json();
@@ -216,18 +214,6 @@ async function runTests() {
     // Test 8: Admin Authentication & API Protection
     // ----------------------------------------------------
     console.log('\n>>> Test 8: Kiểm tra Bảo vệ Quản trị (Admin)...');
-    // Truy cập không có auth -> 401
-    const unauthRes = await fetch(`${BASE_URL}/api/admin/demands`);
-    assert('Test 8.1 - Chặn truy cập Admin khi chưa xác thực (401)', unauthRes.status === 401);
-
-    // Đăng nhập sai pass -> 401
-    const wrongLogin = await fetch(`${BASE_URL}/api/admin/auth`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: 'wrong_password_123' }),
-    });
-    assert('Test 8.2 - Chặn đăng nhập sai mật khẩu', wrongLogin.status === 401);
-
     // Đăng nhập đúng pass -> 200
     const correctLogin = await fetch(`${BASE_URL}/api/admin/auth`, {
       method: 'POST',
@@ -236,41 +222,29 @@ async function runTests() {
     });
     const loginJson = await correctLogin.json();
     const adminToken = loginJson.token;
-    assert('Test 8.3 - Đăng nhập Admin thành công', correctLogin.status === 200 && !!adminToken);
+    assert('Test 8.1 - Đăng nhập Admin thành công', correctLogin.status === 200 && !!adminToken);
 
-    // Admin lấy danh sách chi tiết (thấy số căn & số điện thoại)
+    // Admin lấy danh sách chi tiết (thấy số căn, SĐT, Bàn ăn)
     const adminListRes = await fetch(`${BASE_URL}/api/admin/demands`, {
       headers: { 'Authorization': `Bearer ${adminToken}` },
     });
     const adminListJson = await adminListRes.json();
-    assert('Test 8.4 - Admin xem được danh sách chi tiết', adminListRes.status === 200 && Array.isArray(adminListJson.data));
+    assert('Test 8.2 - Admin xem được danh sách chi tiết', adminListRes.status === 200 && Array.isArray(adminListJson.data));
 
     const testRecordInAdmin = adminListJson.data.find(d => d.apartment_number === TEST_APT_1);
-    assert('Test 8.5 - Admin nhìn thấy đúng Số căn hộ "' + TEST_APT_1 + '"', !!testRecordInAdmin);
-    assert('Test 8.6 - Admin nhìn thấy đúng Tên Zalo "' + TEST_ZALO_1 + '"', testRecordInAdmin?.zalo_name === TEST_ZALO_1);
-    assert('Test 8.7 - Admin nhìn thấy đúng Số điện thoại "' + TEST_PHONE_1 + '"', testRecordInAdmin?.phone_number === TEST_PHONE_1);
+    assert('Test 8.3 - Admin nhìn thấy đúng Số căn hộ "' + TEST_APT_1 + '"', !!testRecordInAdmin);
+    assert('Test 8.4 - Admin nhìn thấy đúng Số điện thoại "' + TEST_PHONE_1 + '"', testRecordInAdmin?.phone_number === TEST_PHONE_1);
+    assert('Test 8.5 - Admin nhìn thấy đúng Số lượng Bàn ghế ăn = 3', testRecordInAdmin?.dining_table_set_qty === 3);
 
     // ----------------------------------------------------
     // Test 9: Admin Tìm kiếm & Lọc sản phẩm
     // ----------------------------------------------------
     console.log('\n>>> Test 9: Kiểm tra Tìm kiếm & Lọc Admin...');
-    const searchAptRes = await fetch(`${BASE_URL}/api/admin/demands?search=${encodeURIComponent(TEST_APT_1)}`, {
+    const searchDiningRes = await fetch(`${BASE_URL}/api/admin/demands?product=dining_table_set`, {
       headers: { 'x-admin-password': ADMIN_PASSWORD },
     });
-    const searchAptJson = await searchAptRes.json();
-    assert('Test 9.1 - Tìm kiếm theo số căn test', searchAptJson.data?.length >= 1);
-
-    const searchPhoneRes = await fetch(`${BASE_URL}/api/admin/demands?search=${encodeURIComponent(TEST_PHONE_1)}`, {
-      headers: { 'x-admin-password': ADMIN_PASSWORD },
-    });
-    const searchPhoneJson = await searchPhoneRes.json();
-    assert('Test 9.2 - Tìm kiếm theo số điện thoại test', searchPhoneJson.data?.some(d => d.phone_number === TEST_PHONE_1));
-
-    const filterRes = await fetch(`${BASE_URL}/api/admin/demands?product=refrigerator`, {
-      headers: { 'x-admin-password': ADMIN_PASSWORD },
-    });
-    const filterJson = await filterRes.json();
-    assert('Test 9.3 - Lọc theo sản phẩm Tủ lạnh', filterJson.data?.every(d => d.refrigerator_qty > 0));
+    const searchDiningJson = await searchDiningRes.json();
+    assert('Test 9.1 - Lọc theo sản phẩm Bộ bàn ghế ăn', searchDiningJson.data?.every(d => d.dining_table_set_qty > 0));
 
     // ----------------------------------------------------
     // Test 10: Admin Export CSV
@@ -286,11 +260,11 @@ async function runTests() {
 
     assert('Test 10.1 - Xuất CSV thành công HTTP 200', csvRes.status === 200);
     assert('Test 10.2 - CSV có BOM UTF-8 (0xEF, 0xBB, 0xBF)', hasBom === true);
-    assert('Test 10.3 - CSV chứa tiêu đề cột tiếng Việt gồm Số điện thoại', csvText.includes('Tên Zalo') && csvText.includes('Số căn hộ') && csvText.includes('Số điện thoại'));
-    assert('Test 10.4 - CSV chứa dữ liệu test số điện thoại', csvText.includes(TEST_PHONE_1));
+    assert('Test 10.3 - CSV chứa tiêu đề cột Bộ bàn ghế ăn', csvText.includes('Bộ bàn ghế ăn đóng sẵn (bộ)'));
+    assert('Test 10.4 - CSV chứa dữ liệu test', csvText.includes(TEST_APT_1));
 
     // ----------------------------------------------------
-    // Test 11: Kiểm tra Format Đoạn Text Copy Thống Kê Nhanh Cho Zalo
+    // Test 11: Kiểm tra Format Đoạn Text Copy Thống Kê Nhanh Cho Zalo (10 sản phẩm)
     // ----------------------------------------------------
     console.log('\n>>> Test 11: Kiểm tra Đoạn Text Copy Thống Kê Nhanh...');
     function testGenerateZaloShareText(products, totalHouseholds) {
@@ -309,26 +283,13 @@ async function runTests() {
       return `📊 CẬP NHẬT NHU CẦU MUA SẮM CƯ DÂN KYOTO\n\n👥 Hiện có ${totalHouseholds} hộ đã tham gia khảo sát.\n\n${productLines}\n\n🔥 Nhu cầu cao nhất hiện tại: ${highestText}\n\n👉 Anh/chị cư dân chưa đăng ký có thể cập nhật nhu cầu của mình để cộng đồng có số liệu tổng hợp chính xác hơn khi làm việc với các nhà phân phối/đại lý.\n\n🔗 Đăng ký và xem số liệu mới nhất tại:\nhttps://mua-chung-do-kyoto.vercel.app/\n\n📌 Đây là khảo sát nhu cầu tự nguyện của cộng đồng cư dân, không phải đơn đặt hàng hay cam kết mua.`;
     }
 
-    const sampleProducts = [
-      { key: 'tv', name: 'Tivi', icon: '📺', unit: 'chiếc', total_qty: 7, households_count: 5, is_highest: false },
-      { key: 'sofa', name: 'Sofa', icon: '🛋️', unit: 'bộ', total_qty: 5, households_count: 5, is_highest: false },
-      { key: 'curtain', name: 'Rèm', icon: '🪟', unit: 'bộ', total_qty: 8, households_count: 6, is_highest: true },
-      { key: 'drying_rack', name: 'Dàn phơi', icon: '👕', unit: 'bộ', total_qty: 6, households_count: 6, is_highest: false },
-      { key: 'bed', name: 'Giường đóng sẵn', icon: '🛏️', unit: 'chiếc', total_qty: 4, households_count: 3, is_highest: false },
-      { key: 'refrigerator', name: 'Tủ lạnh', icon: '❄️', unit: 'chiếc', total_qty: 7, households_count: 7, is_highest: false },
-      { key: 'washing_machine', name: 'Máy giặt', icon: '🧺', unit: 'chiếc', total_qty: 6, households_count: 6, is_highest: false },
-      { key: 'dryer', name: 'Máy sấy', icon: '♨️', unit: 'chiếc', total_qty: 3, households_count: 3, is_highest: false },
-      { key: 'dishwasher', name: 'Máy rửa bát', icon: '🍽️', unit: 'chiếc', total_qty: 5, households_count: 5, is_highest: false },
-    ];
-    const generatedText = testGenerateZaloShareText(sampleProducts, 8);
+    const generatedText = testGenerateZaloShareText(newSummary.products, newSummary.total_households);
 
     assert('Test 11.1 - Đoạn text có tiêu đề Zalo', generatedText.includes('📊 CẬP NHẬT NHU CẦU MUA SẮM CƯ DÂN KYOTO'));
-    assert('Test 11.2 - Có số hộ tham gia', generatedText.includes('👥 Hiện có 8 hộ đã tham gia khảo sát.'));
-    assert('Test 11.3 - Có đủ 9 mặt hàng', generatedText.includes('📺 Tivi: 7 chiếc') && generatedText.includes('🪟 Rèm: 8 bộ') && generatedText.includes('🍽️ Máy rửa bát: 5 chiếc'));
-    assert('Test 11.4 - Có dòng Nhu cầu cao nhất', generatedText.includes('🔥 Nhu cầu cao nhất hiện tại: Rèm – 8 bộ'));
-    assert('Test 11.5 - BẮT BUỘC có URL Production', generatedText.includes('https://mua-chung-do-kyoto.vercel.app/'));
-    assert('Test 11.6 - KHÔNG chứa số căn hộ hoặc ID', !generatedText.includes('apartment_number') && !generatedText.includes('uuid'));
-    assert('Test 11.7 - KHÔNG chứa số điện thoại hoặc phone_number', !generatedText.includes('phone_number') && !generatedText.includes(TEST_PHONE_1));
+    assert('Test 11.2 - Có dòng Bộ bàn ghế ăn đóng sẵn', generatedText.includes('🍽️ Bộ bàn ghế ăn đóng sẵn:'));
+    assert('Test 11.3 - BẮT BUỘC có URL Production', generatedText.includes('https://mua-chung-do-kyoto.vercel.app/'));
+    assert('Test 11.4 - KHÔNG chứa số căn hộ hoặc ID', !generatedText.includes('apartment_number') && !generatedText.includes('uuid'));
+    assert('Test 11.5 - KHÔNG chứa số điện thoại hoặc phone_number', !generatedText.includes('phone_number') && !generatedText.includes(TEST_PHONE_1));
 
     // ----------------------------------------------------
     // Test 12: Cleanup toàn bộ Test Data

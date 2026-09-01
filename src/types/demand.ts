@@ -4,6 +4,7 @@ export type ProductKey =
   | 'curtain'
   | 'drying_rack'
   | 'bed'
+  | 'dining_table_set'
   | 'refrigerator'
   | 'washing_machine'
   | 'dryer'
@@ -13,6 +14,7 @@ export interface ProductConfig {
   key: ProductKey;
   dbField: string;
   name: string;
+  shortName?: string;
   icon: string;
   unit: string;
   description: string;
@@ -30,6 +32,7 @@ export interface ResidentDemandRecord {
   curtain_qty: number;
   drying_rack_qty: number;
   bed_qty: number;
+  dining_table_set_qty: number;
   refrigerator_qty: number;
   washing_machine_qty: number;
   dryer_qty: number;
@@ -50,6 +53,7 @@ export interface DemandFormData {
 export interface ProductDemandStat {
   key: ProductKey;
   name: string;
+  shortName?: string;
   icon: string;
   unit: string;
   total_qty: number;
@@ -74,6 +78,7 @@ export interface SubmitDemandPayload {
   curtain_qty?: number;
   drying_rack_qty?: number;
   bed_qty?: number;
+  dining_table_set_qty?: number;
   refrigerator_qty?: number;
   washing_machine_qty?: number;
   dryer_qty?: number;

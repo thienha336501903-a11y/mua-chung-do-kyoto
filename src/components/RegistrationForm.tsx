@@ -13,7 +13,6 @@ import {
   AlertCircle,
   Sparkles,
   Lock,
-  Phone,
 } from 'lucide-react';
 
 interface RegistrationFormProps {
@@ -39,6 +38,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
     curtain: { selected: false, quantity: 1 },
     drying_rack: { selected: false, quantity: 1 },
     bed: { selected: false, quantity: 1 },
+    dining_table_set: { selected: false, quantity: 1 },
     refrigerator: { selected: false, quantity: 1 },
     washing_machine: { selected: false, quantity: 1 },
     dryer: { selected: false, quantity: 1 },
@@ -124,6 +124,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
         curtain_qty: selectedDemands.curtain.selected ? selectedDemands.curtain.quantity : 0,
         drying_rack_qty: selectedDemands.drying_rack.selected ? selectedDemands.drying_rack.quantity : 0,
         bed_qty: selectedDemands.bed.selected ? selectedDemands.bed.quantity : 0,
+        dining_table_set_qty: selectedDemands.dining_table_set.selected ? selectedDemands.dining_table_set.quantity : 0,
         refrigerator_qty: selectedDemands.refrigerator.selected ? selectedDemands.refrigerator.quantity : 0,
         washing_machine_qty: selectedDemands.washing_machine.selected ? selectedDemands.washing_machine.quantity : 0,
         dryer_qty: selectedDemands.dryer.selected ? selectedDemands.dryer.quantity : 0,
@@ -259,14 +260,14 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
             </div>
           </div>
 
-          {/* Section 2: 9 Product Cards */}
+          {/* Section 2: 10 Product Cards */}
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-kyoto-950 flex items-center gap-2">
                   <span>Danh Sách Sản Phẩm Cần Khảo Sát</span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-kyoto-100 text-kyoto-800">
-                    Đã chọn: {activeCount}/9
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-kyoto-100 text-kyoto-800 font-bold">
+                    Đã chọn: {activeCount}/{PRODUCTS.length}
                   </span>
                 </h3>
                 <p className="text-xs text-gray-500">
@@ -310,7 +311,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
                           e.stopPropagation();
                           handleToggle(p.key);
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 flex-shrink-0 ${
                           state.selected
                             ? 'bg-kyoto-700 text-white shadow-sm'
                             : 'bg-gray-100 text-gray-700 hover:bg-kyoto-100 hover:text-kyoto-900 border border-gray-200'
@@ -380,7 +381,7 @@ export default function RegistrationForm({ onSuccess }: RegistrationFormProps) {
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Ví dụ: Mong muốn Tivi 65 inch, Tủ lạnh 4 cánh..."
+              placeholder="Ví dụ: Mong muốn Tivi 65 inch, Tủ lạnh 4 cánh, Bàn ăn 6 ghế mặt đá..."
               maxLength={200}
               className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs sm:text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-kyoto-600 text-gray-800 placeholder-gray-400"
             />
