@@ -1,49 +1,7 @@
--- =========================================================================
--- BẢNG LƯU TRỮ KHẢO SÁT NHU CẦU MUA SẮM CƯ DÂN KYOTO
--- =========================================================================
-
-CREATE TABLE IF NOT EXISTS public.resident_demands (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    zalo_name TEXT NOT NULL,
-    apartment_number TEXT NOT NULL,
-    phone_number TEXT,
-    tv_qty INTEGER NOT NULL DEFAULT 0 CHECK (tv_qty >= 0 AND tv_qty <= 10),
-    sofa_qty INTEGER NOT NULL DEFAULT 0 CHECK (sofa_qty >= 0 AND sofa_qty <= 10),
-    curtain_qty INTEGER NOT NULL DEFAULT 0 CHECK (curtain_qty >= 0 AND curtain_qty <= 10),
-    drying_rack_qty INTEGER NOT NULL DEFAULT 0 CHECK (drying_rack_qty >= 0 AND drying_rack_qty <= 10),
-    bed_qty INTEGER NOT NULL DEFAULT 0 CHECK (bed_qty >= 0 AND bed_qty <= 10),
-    dining_table_set_qty INTEGER NOT NULL DEFAULT 0 CHECK (dining_table_set_qty >= 0 AND dining_table_set_qty <= 10),
-    refrigerator_qty INTEGER NOT NULL DEFAULT 0 CHECK (refrigerator_qty >= 0 AND refrigerator_qty <= 10),
-    washing_machine_qty INTEGER NOT NULL DEFAULT 0 CHECK (washing_machine_qty >= 0 AND washing_machine_qty <= 10),
-    dryer_qty INTEGER NOT NULL DEFAULT 0 CHECK (dryer_qty >= 0 AND dryer_qty <= 10),
-    dishwasher_qty INTEGER NOT NULL DEFAULT 0 CHECK (dishwasher_qty >= 0 AND dishwasher_qty <= 10),
-    note TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Index chống trùng lặp theo số căn hộ (chuẩn hóa chữ in hoa và cắt khoảng trắng)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_resident_apartment 
-ON public.resident_demands (upper(trim(apartment_number)));
-
--- Index hỗ trợ tìm kiếm Admin và sắp xếp
-CREATE INDEX IF NOT EXISTS idx_resident_demands_zalo ON public.resident_demands (lower(trim(zalo_name)));
-CREATE INDEX IF NOT EXISTS idx_resident_demands_phone ON public.resident_demands (lower(trim(phone_number)));
-CREATE INDEX IF NOT EXISTS idx_resident_demands_created ON public.resident_demands (created_at DESC);
-
--- Kích hoạt Row Level Security (RLS) để bảo vệ tuyệt đối dữ liệu riêng tư
-ALTER TABLE public.resident_demands ENABLE ROW LEVEL SECURITY;
-
--- Service Role (dành cho Next.js Backend) có toàn quyền
-CREATE POLICY "Service role full access on resident_demands"
-ON public.resident_demands
-FOR ALL
-USING (auth.role() = 'service_role')
-WITH CHECK (auth.role() = 'service_role');
-
--- =========================================================================
--- MODULE: NHÀ PHÂN PHỐI / ĐẠI LÝ CHÀO GIÁ TỐT (SUPPLIER TENDER MODULE)
--- =========================================================================
+-- ================================================================
+-- MIGRATION: BỔ SUNG MODULE NHÀ PHÂN PHỐI / ĐẠI LÝ CHÀO GIÁ TỐT
+-- BẢO TOÀN 100% DỮ LIỆU CƯ DÂN TRÊN BẢNG resident_demands (ADDITIVE ONLY)
+-- ================================================================
 
 -- 1. Bảng Đợt Mời Chào Giá (Tender Round / Campaign)
 CREATE TABLE IF NOT EXISTS public.supplier_tenders (

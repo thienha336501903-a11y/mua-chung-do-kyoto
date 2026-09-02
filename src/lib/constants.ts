@@ -127,3 +127,30 @@ export const PRODUCT_MAP: Record<ProductKey, ProductConfig> = PRODUCTS.reduce(
 
 export const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'kyoto2026@admin';
 export const ADMIN_COOKIE_NAME = 'kyoto_admin_session';
+
+export const COMMON_BRANDS: string[] = [
+  'Panasonic',
+  'LG',
+  'Samsung',
+  'Sony',
+  'Toshiba',
+  'Bosch',
+  'Electrolux',
+  'Casper',
+  'Funiki',
+  'Hitachi',
+  'Sharp',
+  'Mitsubishi Electric',
+  'Hafele',
+  'TCL',
+  'Xiaomi',
+  'Daikin',
+  'Gree',
+  'Aqua',
+  'Sunhouse',
+  'Kangaroo',
+  'Nội thất An Cường',
+  'Hòa Phát',
+  'Khác',
+];
+

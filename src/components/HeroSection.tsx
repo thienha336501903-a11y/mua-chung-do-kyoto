@@ -1,5 +1,6 @@
 import React from 'react';
-import { Users, ArrowDownCircle, Sparkles, Building, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import { Users, ArrowDownCircle, Sparkles, Building, TrendingUp, DollarSign } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 
 interface HeroSectionProps {
@@ -66,21 +67,38 @@ export default function HeroSection({
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
+        {/* Action Buttons in Vertical Stack */}
+        <div className="flex flex-col items-center justify-center gap-3 max-w-lg mx-auto">
+          {/* 1. Primary CTA for Residents */}
           <a
             href="#dang-ky"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-bold rounded-xl bg-gradient-to-r from-kyoto-700 via-kyoto-800 to-kyoto-900 text-white hover:from-kyoto-800 hover:to-kyoto-950 shadow-soft active:scale-[0.98] transition-all"
+            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-bold rounded-2xl bg-gradient-to-r from-kyoto-700 via-kyoto-800 to-kyoto-900 text-white hover:from-kyoto-800 hover:to-kyoto-950 shadow-soft active:scale-[0.98] transition-all"
           >
             <Sparkles className="w-5 h-5 text-champagne-300" />
-            ĐĂNG KÝ NHU CẦU CỦA TÔI
+            <span>✨ ĐĂNG KÝ NHU CẦU CỦA TÔI</span>
           </a>
+
+          {/* 2. Gold CTA for Suppliers */}
+          <div className="w-full">
+            <Link
+              href="/nha-cung-cap"
+              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 text-sm sm:text-base font-extrabold rounded-2xl bg-gradient-to-r from-champagne-400 via-amber-400 to-champagne-500 hover:from-champagne-300 hover:to-amber-300 text-kyoto-950 border border-champagne-300 shadow-md active:scale-[0.98] transition-all"
+            >
+              <DollarSign className="w-4 h-4 stroke-[3]" />
+              <span>💰 NHÀ PHÂN PHỐI ĐĂNG KÝ CHÀO GIÁ TỐT</span>
+            </Link>
+            <p className="text-[11px] text-gray-500 mt-1">
+              Dành cho đại lý / nhà phân phối gửi báo giá tốt cho các model cư dân đang quan tâm.
+            </p>
+          </div>
+
+          {/* 3. Community Demand CTA */}
           <a
             href="#tong-hop"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 text-sm font-semibold rounded-xl bg-white text-kyoto-900 border border-kyoto-200 hover:bg-kyoto-50 shadow-sm active:scale-[0.98] transition-all"
+            className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-semibold rounded-xl bg-white text-kyoto-900 border border-kyoto-200 hover:bg-kyoto-50 shadow-sm active:scale-[0.98] transition-all"
           >
             <ArrowDownCircle className="w-4 h-4 text-kyoto-700" />
-            Xem Nhu Cầu Toàn Cộng Đồng
+            <span>↓ Xem Nhu Cầu Toàn Cộng Đồng</span>
           </a>
         </div>
       </div>
