@@ -45,6 +45,16 @@
   75% { transform: translateX(4px); }
 }
 
+/* Subtle pulse animation: scale 1 -> 1.02 -> 1 over 3s */
+@keyframes pulseSubtle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out forwards;
 }
@@ -55,4 +65,15 @@
 
 .animate-shake {
   animation: shake 0.3s ease-in-out;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-subtle {
+    animation: none !important;
+  }
 }

@@ -20,11 +20,17 @@ export default function HeroSection({
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#0c3b2e_1px,transparent_1px)] [background-size:16px_16px]" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center relative z-10">
-        {/* Community Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-kyoto-100 text-kyoto-900 border border-kyoto-200 text-xs sm:text-sm font-semibold mb-4 shadow-sm">
-          <Building className="w-4 h-4 text-kyoto-700" />
-          <span>Cộng Đồng Cư Dân Chung Cư Kyoto</span>
-        </div>
+        {/* Community Badge with direct Zalo Group Link and subtle pulse animation */}
+        <a
+          href="https://zalo.me/g/qwxsrujqpijko8xmi0uk"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Truy cập Cộng Đồng Cư Dân Chung Cư Kyoto trên Zalo"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-kyoto-100 text-kyoto-900 border border-kyoto-200 text-xs sm:text-sm font-semibold mb-4 shadow-sm hover:bg-kyoto-200/90 hover:border-kyoto-300 hover:text-kyoto-950 active:scale-[0.98] transition-all duration-200 animate-pulse-subtle max-w-full text-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-kyoto-600 focus:ring-offset-2"
+        >
+          <Building className="w-4 h-4 text-kyoto-700 flex-shrink-0" />
+          <span className="leading-snug">Ấn để truy cập Cộng Đồng Cư Dân Chung Cư Kyoto</span>
+        </a>
 
         {/* Main Title */}
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-kyoto-950 tracking-tight leading-tight uppercase mb-3">
