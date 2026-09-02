@@ -45,7 +45,7 @@
   75% { transform: translateX(4px); }
 }
 
-/* Subtle pulse animation: scale 1 -> 1.02 -> 1 over 3s */
+/* Subtle pulse animation: scale 1 -> 1.02 -> 1 over 2s */
 @keyframes pulseSubtle {
   0%, 100% {
     transform: scale(1);
@@ -68,7 +68,7 @@
 }
 
 .animate-pulse-subtle {
-  animation: pulseSubtle 3s ease-in-out infinite;
+  animation: pulseSubtle 2s ease-in-out infinite;
   will-change: transform;
 }
 
