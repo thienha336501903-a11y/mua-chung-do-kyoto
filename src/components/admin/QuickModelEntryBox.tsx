@@ -267,25 +267,6 @@ export default function QuickModelEntryBox({
                 itemType: 'SERVICE_SPEC',
                 unit: 'm²',
                 brand: 'Rèm Cửa',
-                modelCode: 'REM-CUON',
-                productName: 'Rèm cuốn chống nắng',
-                qty: 50,
-                specs: 'Rèm cuốn cản sáng văn phòng / phòng ngủ',
-              })
-            }
-            className="px-2.5 py-1 rounded-lg bg-kyoto-800 hover:bg-kyoto-700 text-white font-semibold border border-kyoto-700 active:scale-95 transition-all"
-          >
-            🪟 + Rèm cuốn
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              applyPreset({
-                categoryKey: 'curtain',
-                itemType: 'SERVICE_SPEC',
-                unit: 'm²',
-                brand: 'Rèm Cửa',
                 modelCode: 'REM-TO-ONG',
                 productName: 'Rèm tổ ong cách nhiệt',
                 qty: 30,
@@ -375,7 +356,7 @@ export default function QuickModelEntryBox({
               className="w-full px-3 py-2.5 rounded-xl border border-kyoto-700 bg-kyoto-800 text-white text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-champagne-400"
             >
               <optgroup label="Hạng mục Đợt #02">
-                <option value="curtain">🪟 Rèm cửa (5 loại chuẩn)</option>
+                <option value="curtain">🪟 Rèm cửa (4 loại chuẩn)</option>
                 <option value="safety_net">🛡️ Lưới an toàn (Ban công/Cửa sổ)</option>
                 <option value="drying_rack">👕 Giàn phơi thông minh</option>
               </optgroup>

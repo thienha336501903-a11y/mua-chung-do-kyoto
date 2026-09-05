@@ -53,7 +53,6 @@ export async function GET(req: NextRequest) {
       'Khung nhôm (Lưới AT)',
       'Tải trọng (kg)',
       'Số thanh phơi',
-      'Giá bậc thang theo SL',
       'Link Catalog / Website',
       'Model thay thế?',
       'Lý do đề xuất thay thế',
@@ -88,16 +87,6 @@ export async function GET(req: NextRequest) {
         email: '',
         address_region: '',
       };
-
-      const tierPricingText =
-        Array.isArray(q.tier_pricing) && q.tier_pricing.length > 0
-          ? q.tier_pricing
-              .map(
-                (tp) =>
-                  `${tp.tier_name || ''} (${tp.min_units || 1}-${tp.max_units || 'nhiều'}): ${formatNumber(tp.unit_price)}₫`
-              )
-              .join('; ')
-          : '';
 
       return [
         idx + 1,
@@ -134,7 +123,6 @@ export async function GET(req: NextRequest) {
         escapeCsv(q.frame_spec || ''),
         q.load_capacity_kg ? `${q.load_capacity_kg}kg` : '',
         q.drying_bars_count ? `${q.drying_bars_count}` : '',
-        escapeCsv(tierPricingText),
         escapeCsv(q.catalog_url || ''),
         q.is_alternative ? 'Đúng' : 'Không',
         escapeCsv(q.proposal_reason || ''),

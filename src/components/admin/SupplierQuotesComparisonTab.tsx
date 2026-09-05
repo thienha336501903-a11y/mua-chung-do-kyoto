@@ -4,27 +4,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { SupplierTender, ModelComparisonGroup, SupplierQuoteRecord } from '@/types/supplier';
 import { ProductKey } from '@/types/demand';
 import { PRODUCTS } from '@/lib/constants';
-import { formatNumber, formatDateTimeVietnam } from '@/lib/utils';
+import { formatNumber } from '@/lib/utils';
 import {
-  DollarSign,
   Award,
   Download,
-  Filter,
-  CheckCircle2,
   Star,
   PhoneCall,
   Sparkles,
   Search,
-  ArrowUpDown,
-  Layers,
   Building,
-  Tag,
-  ShieldCheck,
-  Truck,
-  Wrench,
-  Flame,
   ExternalLink,
-  Info,
 } from 'lucide-react';
 
 interface SupplierQuotesComparisonTabProps {
@@ -371,7 +360,7 @@ export default function SupplierQuotesComparisonTab({
                             <th className="py-2.5 px-3">Thông Số & Quy Cách</th>
                             <th className="py-2.5 px-3 text-center">Bao Gồm (VAT/Lắp/Đo)</th>
                             <th className="py-2.5 px-3 text-center">Bảo Hành</th>
-                            <th className="py-2.5 px-3">Giá Bậc Thang / Catalog</th>
+                            <th className="py-2.5 px-3">Catalog / Ghi Chú</th>
                             <th className="py-2.5 px-3 text-center">Đánh Giá</th>
                           </tr>
                         </thead>
@@ -460,9 +449,6 @@ export default function SupplierQuotesComparisonTab({
                                   {q.material && (
                                     <div><strong>Vật liệu:</strong> {q.material}</div>
                                   )}
-                                  {q.quote_note && (
-                                    <div className="text-[11px] text-gray-500 italic mt-0.5">{q.quote_note}</div>
-                                  )}
                                 </td>
 
                                 {/* 5. Included Perks (VAT, Ship, Install, Survey) */}
@@ -506,31 +492,26 @@ export default function SupplierQuotesComparisonTab({
                                   {q.warranty_months ? `${q.warranty_months} tháng` : '—'}
                                 </td>
 
-                                {/* 7. Tier Pricing & Catalog Link */}
+                                {/* 7. Catalog & Notes */}
                                 <td className="py-3 px-3 text-xs max-w-xs">
-                                  {Array.isArray(q.tier_pricing) && q.tier_pricing.length > 0 ? (
-                                    <div className="space-y-0.5 mb-1">
-                                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
-                                        Giá theo số lượng căn:
-                                      </span>
-                                      {q.tier_pricing.map((tp, tidx) => (
-                                        <div key={tidx} className="text-[11px] text-gray-700">
-                                          • {tp.tier_name || `${tp.min_units}-${tp.max_units || 'nhiều'} căn`}: <strong>{formatNumber(tp.unit_price)}₫</strong>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : null}
-
                                   {q.catalog_url && (
-                                    <a
-                                      href={q.catalog_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-kyoto-800 hover:text-kyoto-950 hover:underline"
-                                    >
-                                      <ExternalLink className="w-3 h-3" />
-                                      <span>Xem Catalog</span>
-                                    </a>
+                                    <div className="mb-1">
+                                      <a
+                                        href={q.catalog_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-kyoto-800 hover:text-kyoto-950 hover:underline"
+                                      >
+                                        <ExternalLink className="w-3 h-3" />
+                                        <span>Xem Catalog</span>
+                                      </a>
+                                    </div>
+                                  )}
+                                  {q.quote_note && (
+                                    <div className="text-[11px] text-gray-500 italic">{q.quote_note}</div>
+                                  )}
+                                  {!q.catalog_url && !q.quote_note && (
+                                    <span className="text-gray-300">-</span>
                                   )}
                                 </td>
 

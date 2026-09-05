@@ -184,7 +184,7 @@ export async function submitSupplierQuotes(payload: SubmitSupplierPayload): Prom
         list_price: q.list_price ? Math.max(Number(q.list_price), 0) : null,
         discount_percent: q.discount_percent !== undefined && q.discount_percent !== null ? Number(q.discount_percent) : null,
         effective_price: calculatedEffectivePrice,
-        unit_price: calculatedEffectivePrice, // Store effective price as primary numeric price for index & sorting
+        unit_price: calculatedEffectivePrice,
         stock_status: q.stock_status || 'in_stock',
         available_qty: Math.max(Number(q.available_qty) || 1, 0),
         is_vat_included: !!q.is_vat_included,
@@ -206,7 +206,6 @@ export async function submitSupplierQuotes(payload: SubmitSupplierPayload): Prom
         drying_bars_count: q.drying_bars_count ? Number(q.drying_bars_count) : null,
         catalog_url: q.catalog_url ? sanitizeText(q.catalog_url) : null,
         catalog_code: q.catalog_code ? sanitizeText(q.catalog_code) : null,
-        tier_pricing: Array.isArray(q.tier_pricing) && q.tier_pricing.length > 0 ? q.tier_pricing : null,
         proposal_reason: q.proposal_reason ? sanitizeText(q.proposal_reason) : null,
         quote_note: q.quote_note ? sanitizeText(q.quote_note) : null,
         created_at: nowIso,
@@ -447,11 +446,11 @@ export async function deleteAdminTenderItem(id: string): Promise<boolean> {
 }
 
 /**
- * TỰ ĐỘNG KHỞI TẠO CÁC HẠNG MỤC MẪU CHO ĐỢT #02 (RÈM, LƯỚI, GIÀN PHƠI)
+ * TỰ ĐỘNG KHỞI TẠO CÁC HẠNG MỤC MẪU CHO ĐỢT #02 (4 LOẠI RÈM, LƯỚI, GIÀN PHƠI)
  */
 export async function seedTender02StandardItems(tenderId: string): Promise<SupplierTenderItem[]> {
   const standardItems: Array<Parameters<typeof addAdminTenderItem>[0]> = [
-    // RÈM CỬA (5 LOẠI CHUẨN)
+    // RÈM CỬA (4 LOẠI CHUẨN)
     {
       tender_id: tenderId,
       category_key: 'curtain',
@@ -492,25 +491,13 @@ export async function seedTender02StandardItems(tenderId: string): Promise<Suppl
       tender_id: tenderId,
       category_key: 'curtain',
       brand: 'Rèm Cửa',
-      model_code: 'REM-CUON',
-      product_name: 'Rèm cuốn chống nắng',
-      item_type: 'SERVICE_SPEC',
-      unit: 'm²',
-      reference_qty: 50,
-      specifications: 'Rèm cuốn cản sáng văn phòng / phòng ngủ, chào theo giá trực tiếp hoặc chiết khấu % catalog',
-      display_order: 4,
-    },
-    {
-      tender_id: tenderId,
-      category_key: 'curtain',
-      brand: 'Rèm Cửa',
       model_code: 'REM-TO-ONG',
       product_name: 'Rèm tổ ong cách nhiệt',
       item_type: 'SERVICE_SPEC',
       unit: 'm²',
       reference_qty: 30,
       specifications: 'Rèm tổ ong ngăn lạnh, cách nhiệt, hoàn thiện ray và lắp đặt',
-      display_order: 5,
+      display_order: 4,
     },
     // LƯỚI AN TOÀN
     {
@@ -523,7 +510,7 @@ export async function seedTender02StandardItems(tenderId: string): Promise<Suppl
       unit: 'm²',
       reference_qty: 120,
       specifications: 'Cáp inox 304 bọc nhựa / trần, thanh nhôm định hình dập vít nở, đo đạc và thi công trọn gói',
-      display_order: 6,
+      display_order: 5,
     },
     // GIÀN PHƠI THÔNG MINH
     {
@@ -536,7 +523,7 @@ export async function seedTender02StandardItems(tenderId: string): Promise<Suppl
       unit: 'bộ',
       reference_qty: 40,
       specifications: 'Bộ giàn phơi 2 thanh phơi nhôm 2.2m, dây cáp lụa inox, củ quay trợ lực, trọn gói lắp đặt',
-      display_order: 7,
+      display_order: 6,
     },
   ];
 

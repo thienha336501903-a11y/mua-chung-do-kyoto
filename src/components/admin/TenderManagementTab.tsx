@@ -11,19 +11,9 @@ import {
   Trash2,
   Copy,
   FolderPlus,
-  CheckCircle2,
-  Lock,
-  Archive,
   Eye,
   FileText,
-  AlertCircle,
-  Clock,
-  ArrowUpDown,
-  Share2,
   Sparkles,
-  Layers,
-  Wrench,
-  Check,
 } from 'lucide-react';
 
 interface TenderManagementTabProps {
@@ -124,10 +114,10 @@ export default function TenderManagementTab({
     }
   };
 
-  // Seed 7 standard items for Round #02
+  // Seed 6 standard items for Round #02
   const handleSeedTender02 = async () => {
     if (!selectedTenderId) return;
-    if (!confirm('Nạp 7 hạng mục chuẩn cho Đợt #02 (5 loại rèm, Lưới an toàn, Giàn phơi)?')) return;
+    if (!confirm('Nạp 6 hạng mục chuẩn cho Đợt #02 (4 loại rèm, Lưới an toàn, Giàn phơi)?')) return;
 
     setIsSeeding(true);
     try {
@@ -168,24 +158,13 @@ export default function TenderManagementTab({
         {
           category_key: 'curtain',
           brand: 'Rèm Cửa',
-          model_code: 'REM-CUON',
-          product_name: 'Rèm cuốn chống nắng',
-          item_type: 'SERVICE_SPEC',
-          unit: 'm²',
-          reference_qty: 50,
-          specifications: 'Rèm cuốn cản sáng văn phòng / phòng ngủ',
-          display_order: 4,
-        },
-        {
-          category_key: 'curtain',
-          brand: 'Rèm Cửa',
           model_code: 'REM-TO-ONG',
           product_name: 'Rèm tổ ong cách nhiệt',
           item_type: 'SERVICE_SPEC',
           unit: 'm²',
           reference_qty: 30,
           specifications: 'Rèm tổ ong ngăn nhiệt điều hòa, ray và lắp đặt',
-          display_order: 5,
+          display_order: 4,
         },
         {
           category_key: 'safety_net',
@@ -196,7 +175,7 @@ export default function TenderManagementTab({
           unit: 'm²',
           reference_qty: 120,
           specifications: 'Cáp inox 304 bọc nhựa / trần, thanh nhôm định hình dập vít nở, đo đạc và thi công trọn gói',
-          display_order: 6,
+          display_order: 5,
         },
         {
           category_key: 'drying_rack',
@@ -207,7 +186,7 @@ export default function TenderManagementTab({
           unit: 'bộ',
           reference_qty: 40,
           specifications: 'Bộ giàn phơi 2 thanh phơi nhôm 2.2m, dây cáp lụa inox, củ quay trợ lực, trọn gói lắp đặt',
-          display_order: 7,
+          display_order: 6,
         },
       ];
 
@@ -396,7 +375,7 @@ export default function TenderManagementTab({
                 className="text-xs font-bold text-kyoto-900 bg-champagne-100 hover:bg-champagne-200 px-3 py-1.5 rounded-lg border border-champagne-300 flex items-center gap-1.5 transition-all active:scale-95"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span>{isSeeding ? 'Đang nạp mẫu...' : '⚡ Nạp 7 mục chuẩn Đợt #02'}</span>
+                <span>{isSeeding ? 'Đang nạp mẫu...' : '⚡ Nạp 6 mục chuẩn Đợt #02'}</span>
               </button>
             )}
 
@@ -432,7 +411,7 @@ export default function TenderManagementTab({
               {items.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-gray-500 font-medium">
-                    Chưa có hạng mục nào trong đợt này. Hãy dùng form bên trên hoặc bấm &quot;Nạp 7 mục chuẩn Đợt #02&quot;!
+                    Chưa có hạng mục nào trong đợt này. Hãy dùng form bên trên hoặc bấm &quot;Nạp 6 mục chuẩn Đợt #02&quot;!
                   </td>
                 </tr>
               ) : (
@@ -455,7 +434,7 @@ export default function TenderManagementTab({
                       </td>
                       <td className="py-3 px-3 whitespace-nowrap">
                         <span
-                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                          className={`text-[10px] font-extrabold px-2 py-0.2 rounded-full ${
                             isService
                               ? 'bg-purple-100 text-purple-900 border border-purple-200'
                               : 'bg-blue-100 text-blue-900 border border-blue-200'

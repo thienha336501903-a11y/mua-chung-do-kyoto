@@ -1,37 +1,25 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   SupplierTender,
   SupplierTenderItem,
   StockStatus,
   SubmitSupplierPayload,
   PricingMode,
-  PriceTier,
 } from '@/types/supplier';
 import { PRODUCTS, COMMON_BRANDS } from '@/lib/constants';
 import { formatNumber, isValidVietnamesePhone, normalizePhoneNumber } from '@/lib/utils';
 import {
   Building2,
-  Phone,
-  Mail,
-  MapPin,
-  FileText,
   DollarSign,
-  CheckCircle,
   AlertCircle,
   Send,
   Sparkles,
   Plus,
   Trash2,
-  ChevronDown,
-  ChevronUp,
-  PackageCheck,
-  Award,
   ShieldCheck,
-  Percent,
   Layers,
-  ExternalLink,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -65,12 +53,6 @@ interface ItemPlanState {
   catalogUrl: string;
   catalogCode: string;
   quoteNote: string;
-  // Tier pricing
-  enableTierPricing: boolean;
-  tier1Price: string; // 1-10 căn
-  tier2Price: string; // 11-20 căn
-  tier3Price: string; // 21-30 căn
-  tier4Price: string; // >30 căn
   // Alternative Model
   hasAlternative: boolean;
   altBrand: string;
@@ -102,9 +84,6 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
   const hasCurtainItems = items.some((it) => it.category_key === 'curtain');
   const hasSafetyNetItems = items.some((it) => it.category_key === 'safety_net');
   const hasDryingRackItems = items.some((it) => it.category_key === 'drying_rack');
-  const hasOtherItems = items.some(
-    (it) => it.category_key !== 'curtain' && it.category_key !== 'safety_net' && it.category_key !== 'drying_rack'
-  );
 
   const [selectedCategories, setSelectedCategories] = useState<{
     curtain: boolean;
@@ -126,7 +105,7 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
     return {
       id: `${item.id}-${Date.now()}-${Math.random()}`,
       planName: isCurtain ? (index === 1 ? 'Phương án Tiêu chuẩn' : `Phương án #${index}`) : '',
-      pricingMode: isCurtain && (item.model_code.includes('CAU-VONG') || item.model_code.includes('CUON')) ? 'catalog_discount' : 'direct',
+      pricingMode: isCurtain && item.model_code.includes('CAU-VONG') ? 'catalog_discount' : 'direct',
       listPrice: '',
       discountPercent: '30',
       unitPrice: '',
@@ -153,11 +132,6 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
       catalogUrl: '',
       catalogCode: '',
       quoteNote: '',
-      enableTierPricing: false,
-      tier1Price: '',
-      tier2Price: '',
-      tier3Price: '',
-      tier4Price: '',
       hasAlternative: false,
       altBrand: item.brand || '',
       altModel: '',
@@ -276,19 +250,6 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
         }
 
         if (directPrice > 0) {
-          // Build tier pricing if enabled
-          const tiers: PriceTier[] = [];
-          if (p.enableTierPricing) {
-            const t1 = Number(p.tier1Price.replace(/\D/g, ''));
-            const t2 = Number(p.tier2Price.replace(/\D/g, ''));
-            const t3 = Number(p.tier3Price.replace(/\D/g, ''));
-            const t4 = Number(p.tier4Price.replace(/\D/g, ''));
-            if (t1 > 0) tiers.push({ tier_name: '1–10 căn', min_units: 1, max_units: 10, unit_price: t1 });
-            if (t2 > 0) tiers.push({ tier_name: '11–20 căn', min_units: 11, max_units: 20, unit_price: t2 });
-            if (t3 > 0) tiers.push({ tier_name: '21–30 căn', min_units: 21, max_units: 30, unit_price: t3 });
-            if (t4 > 0) tiers.push({ tier_name: 'Trên 30 căn', min_units: 31, unit_price: t4 });
-          }
-
           quotesPayload.push({
             tender_item_id: it.id,
             is_alternative: false,
@@ -325,7 +286,6 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
             drying_bars_count: p.dryingBarsCount ? Number(p.dryingBarsCount) : undefined,
             catalog_url: p.catalogUrl.trim() || catalogGeneralUrl.trim() || undefined,
             catalog_code: p.catalogCode.trim() || undefined,
-            tier_pricing: tiers.length > 0 ? tiers : undefined,
             quote_note: p.quoteNote.trim() || undefined,
           });
         }
@@ -567,7 +527,7 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
                 />
                 <div>
                   <div className="font-extrabold text-sm">🪟 Rèm Cửa</div>
-                  <div className="text-[11px] text-gray-300">Vải 1-2 lớp, Cầu vồng, Cuốn, Tổ ong</div>
+                  <div className="text-[11px] text-gray-300">Vải 1-2 lớp, Cầu vồng, Tổ ong</div>
                 </div>
               </label>
             )}
@@ -645,7 +605,7 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
                 const isSafetyNet = it.category_key === 'safety_net';
                 const isDryingRack = it.category_key === 'drying_rack';
                 const isTwoLayerCurtain = isCurtain && it.model_code.includes('2-LOP');
-                const isRainbowOrRoller = isCurtain && (it.model_code.includes('CAU-VONG') || it.model_code.includes('CUON'));
+                const isRainbowCurtain = isCurtain && it.model_code.includes('CAU-VONG');
 
                 const isActive = !!activeItemIds[it.id];
                 const plans = itemPlans[it.id] || [createDefaultPlan(it, 1)];
@@ -754,9 +714,9 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
 
                               {/* PRICING INPUTS */}
                               <div>
-                                {isRainbowOrRoller ? (
+                                {isRainbowCurtain ? (
                                   <div className="space-y-3">
-                                    {/* Pricing Mode Switcher for Rainbow / Roller */}
+                                    {/* Pricing Mode Switcher for Rainbow Curtain */}
                                     <div className="flex items-center gap-4 text-xs font-bold text-gray-700 bg-gray-50 p-2.5 rounded-xl border border-gray-200">
                                       <span>Cách báo giá:</span>
                                       <label className="inline-flex items-center gap-1.5 cursor-pointer">
@@ -1074,85 +1034,6 @@ export default function SupplierQuoteForm({ tender, items }: SupplierQuoteFormPr
                                   />
                                   <span className="text-gray-500">tháng</span>
                                 </div>
-                              </div>
-
-                              {/* TIER PRICING TOGGLE */}
-                              <div className="pt-1">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleUpdatePlan(it.id, pIdx, { enableTierPricing: !p.enableTierPricing })
-                                  }
-                                  className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-800 hover:text-amber-950 transition-colors"
-                                >
-                                  <Percent className="w-3.5 h-3.5 text-amber-600" />
-                                  <span>
-                                    {p.enableTierPricing
-                                      ? '[-] Ẩn bảng giá bậc thang theo số lượng căn'
-                                      : '[+] Nhập giá bậc thang ưu đãi theo số lượng căn (1-10 căn, 11-20 căn, >30 căn)'}
-                                  </span>
-                                </button>
-
-                                {p.enableTierPricing && (
-                                  <div className="mt-2.5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-fadeIn text-xs">
-                                    <div>
-                                      <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                                        1 – 10 căn
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={p.tier1Price}
-                                        onChange={(e) =>
-                                          handleUpdatePlan(it.id, pIdx, { tier1Price: e.target.value })
-                                        }
-                                        placeholder="Giá / đơn vị"
-                                        className="w-full px-2.5 py-1.5 rounded-lg border border-amber-300 font-mono font-bold"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                                        11 – 20 căn
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={p.tier2Price}
-                                        onChange={(e) =>
-                                          handleUpdatePlan(it.id, pIdx, { tier2Price: e.target.value })
-                                        }
-                                        placeholder="Giá ưu đãi"
-                                        className="w-full px-2.5 py-1.5 rounded-lg border border-amber-300 font-mono font-bold"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                                        21 – 30 căn
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={p.tier3Price}
-                                        onChange={(e) =>
-                                          handleUpdatePlan(it.id, pIdx, { tier3Price: e.target.value })
-                                        }
-                                        placeholder="Giá ưu đãi"
-                                        className="w-full px-2.5 py-1.5 rounded-lg border border-amber-300 font-mono font-bold"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                                        Trên 30 căn
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={p.tier4Price}
-                                        onChange={(e) =>
-                                          handleUpdatePlan(it.id, pIdx, { tier4Price: e.target.value })
-                                        }
-                                        placeholder="Giá tốt nhất"
-                                        className="w-full px-2.5 py-1.5 rounded-lg border border-amber-300 font-mono font-black text-emerald-900"
-                                      />
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             </div>
                           );

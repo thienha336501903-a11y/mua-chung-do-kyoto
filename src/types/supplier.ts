@@ -5,13 +5,6 @@ export type StockStatus = 'in_stock' | 'pre_order' | 'out_of_stock';
 export type TenderItemType = 'PRODUCT_MODEL' | 'SERVICE_SPEC';
 export type PricingMode = 'direct' | 'catalog_discount';
 
-export interface PriceTier {
-  tier_name?: string;
-  min_units?: number;
-  max_units?: number;
-  unit_price: number;
-}
-
 export interface SupplierTender {
   id: string;
   title: string;
@@ -103,7 +96,6 @@ export interface SupplierQuoteRecord {
   drying_bars_count?: number | null;
   catalog_url?: string | null;
   catalog_code?: string | null;
-  tier_pricing?: PriceTier[] | null;
   proposal_reason?: string | null;
   quote_note?: string | null;
   is_shortlisted: boolean;
@@ -165,7 +157,6 @@ export interface SubmitSupplierPayload {
     drying_bars_count?: number;
     catalog_url?: string;
     catalog_code?: string;
-    tier_pricing?: PriceTier[];
     proposal_reason?: string;
     quote_note?: string;
   }[];
