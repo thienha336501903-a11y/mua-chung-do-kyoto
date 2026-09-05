@@ -20,6 +20,10 @@ import {
   Clock,
   ArrowUpDown,
   Share2,
+  Sparkles,
+  Layers,
+  Wrench,
+  Check,
 } from 'lucide-react';
 
 interface TenderManagementTabProps {
@@ -37,9 +41,10 @@ export default function TenderManagementTab({
 
   // New Tender Modal state
   const [showNewTenderModal, setShowNewTenderModal] = useState(false);
-  const [newTitle, setNewTitle] = useState('Đợt #01 - Thiết bị điện máy & nội thất nhận nhà Kyoto');
-  const [newDesc, setNewDesc] = useState('Mời các đại lý, nhà phân phối gửi bảng giá tốt nhất cho các model cư dân Kyoto đang quan tâm.');
+  const [newTitle, setNewTitle] = useState('Đợt #02 – Rèm cửa • Lưới an toàn • Giàn phơi cư dân Kyoto');
+  const [newDesc, setNewDesc] = useState('Cộng đồng cư dân Kyoto mời các đơn vị tại Thanh Hóa tham gia chào giá các hạng mục rèm cửa, lưới an toàn và giàn phơi. Giá ưu tiên theo phương án hoàn thiện, minh bạch vật tư, lắp đặt và bảo hành.');
   const [isCreatingTender, setIsCreatingTender] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   // Cloned item for Quick Entry Box
   const [clonedItem, setClonedItem] = useState<Partial<SupplierTenderItem> | null>(null);
@@ -119,6 +124,109 @@ export default function TenderManagementTab({
     }
   };
 
+  // Seed 7 standard items for Round #02
+  const handleSeedTender02 = async () => {
+    if (!selectedTenderId) return;
+    if (!confirm('Nạp 7 hạng mục chuẩn cho Đợt #02 (5 loại rèm, Lưới an toàn, Giàn phơi)?')) return;
+
+    setIsSeeding(true);
+    try {
+      const standardItems = [
+        {
+          category_key: 'curtain',
+          brand: 'Rèm Cửa',
+          model_code: 'REM-1-LOP',
+          product_name: 'Rèm vải 1 lớp',
+          item_type: 'SERVICE_SPEC',
+          unit: 'm²',
+          reference_qty: 100,
+          specifications: 'Vải cản sáng 1 lớp, may hoàn thiện, thanh ray, phụ kiện, đo đạc và lắp đặt trọn gói',
+          display_order: 1,
+        },
+        {
+          category_key: 'curtain',
+          brand: 'Rèm Cửa',
+          model_code: 'REM-2-LOP',
+          product_name: 'Rèm vải 2 lớp (Vải chính + Voan)',
+          item_type: 'SERVICE_SPEC',
+          unit: 'm²',
+          reference_qty: 150,
+          specifications: 'Vải chính + lớp voan may hoàn thiện, ray đôi, phụ kiện, đo đạc, lắp đặt trọn gói',
+          display_order: 2,
+        },
+        {
+          category_key: 'curtain',
+          brand: 'Rèm Cửa',
+          model_code: 'REM-CAU-VONG',
+          product_name: 'Rèm cầu vồng Hàn Quốc',
+          item_type: 'SERVICE_SPEC',
+          unit: 'm²',
+          reference_qty: 80,
+          specifications: 'Rèm cầu vồng, chào theo giá trực tiếp hoặc chiết khấu % theo catalog',
+          display_order: 3,
+        },
+        {
+          category_key: 'curtain',
+          brand: 'Rèm Cửa',
+          model_code: 'REM-CUON',
+          product_name: 'Rèm cuốn chống nắng',
+          item_type: 'SERVICE_SPEC',
+          unit: 'm²',
+          reference_qty: 50,
+          specifications: 'Rèm cuốn cản sáng văn phòng / phòng ngủ',
+          display_order: 4,
+        },
+        {
+          category_key: 'curtain',
+          brand: 'Rèm Cửa',
+          model_code: 'REM-TO-ONG',
+          product_name: 'Rèm tổ ong cách nhiệt',
+          item_type: 'SERVICE_SPEC',
+          unit: 'm²',
+          reference_qty: 30,
+          specifications: 'Rèm tổ ong ngăn nhiệt điều hòa, ray và lắp đặt',
+          display_order: 5,
+        },
+        {
+          category_key: 'safety_net',
+          brand: 'Lưới An Toàn',
+          model_code: 'LUOI-AT-BAN-CONG',
+          product_name: 'Lưới an toàn ban công / Cửa sổ',
+          item_type: 'SERVICE_SPEC',
+          unit: 'm²',
+          reference_qty: 120,
+          specifications: 'Cáp inox 304 bọc nhựa / trần, thanh nhôm định hình dập vít nở, đo đạc và thi công trọn gói',
+          display_order: 6,
+        },
+        {
+          category_key: 'drying_rack',
+          brand: 'Hòa Phát / Sankaku',
+          model_code: 'GP-QUAY-TAY',
+          product_name: 'Giàn phơi thông minh gắn trần tay quay liền',
+          item_type: 'PRODUCT_MODEL',
+          unit: 'bộ',
+          reference_qty: 40,
+          specifications: 'Bộ giàn phơi 2 thanh phơi nhôm 2.2m, dây cáp lụa inox, củ quay trợ lực, trọn gói lắp đặt',
+          display_order: 7,
+        },
+      ];
+
+      for (const it of standardItems) {
+        await fetch(`/api/admin/tenders/${selectedTenderId}/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(it),
+        });
+      }
+
+      fetchItems(selectedTenderId);
+    } catch (err: any) {
+      alert('Lỗi: ' + err.message);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   // Change Tender Status handler (Draft -> Open -> Closed -> Archived)
   const handleStatusChange = async (newStatus: TenderStatus) => {
     if (!selectedTenderId) return;
@@ -139,7 +247,7 @@ export default function TenderManagementTab({
 
   // Delete Tender Item handler
   const handleDeleteItem = async (itemId: string, brand: string, model: string) => {
-    if (!confirm(`Bạn có chắc muốn xóa model "${brand} ${model}" khỏi đợt này?`)) return;
+    if (!confirm(`Bạn có chắc muốn xóa hạng mục "${brand} ${model}" khỏi đợt này?`)) return;
     try {
       const res = await fetch(`/api/admin/tenders/items/${itemId}`, { method: 'DELETE' });
       const json = await res.json();
@@ -155,6 +263,8 @@ export default function TenderManagementTab({
   const handleCloneItem = (item: SupplierTenderItem) => {
     setClonedItem({
       category_key: item.category_key,
+      item_type: item.item_type,
+      unit: item.unit,
       brand: item.brand,
       model_code: `${item.model_code}-COPY`,
       reference_qty: item.reference_qty,
@@ -203,7 +313,7 @@ export default function TenderManagementTab({
             ) : (
               tenders.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.title} [{t.status.toUpperCase()}] ({t.items_count || 0} model)
+                  {t.title} [{t.status.toUpperCase()}] ({t.items_count || 0} hạng mục)
                 </option>
               ))
             )}
@@ -271,23 +381,37 @@ export default function TenderManagementTab({
 
       {/* Model Items Table for Selected Tender */}
       <div className="bg-white rounded-2xl shadow-card border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <FileText className="w-4 h-4 text-kyoto-800" />
-            <span>Danh sách Model mời chào giá ({items.length} model)</span>
+            <span>Danh sách Hạng Mục / Model mời chào giá ({items.length} mục)</span>
           </div>
 
-          {selectedTender?.status === 'open' && (
-            <a
-              href="/nha-cung-cap"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-bold text-kyoto-800 hover:text-kyoto-950 flex items-center gap-1 bg-kyoto-50 px-2.5 py-1 rounded-lg border border-kyoto-200"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              <span>Xem trang chào giá NCC</span>
-            </a>
-          )}
+          <div className="flex items-center gap-2">
+            {selectedTender && items.length === 0 && (
+              <button
+                type="button"
+                onClick={handleSeedTender02}
+                disabled={isSeeding}
+                className="text-xs font-bold text-kyoto-900 bg-champagne-100 hover:bg-champagne-200 px-3 py-1.5 rounded-lg border border-champagne-300 flex items-center gap-1.5 transition-all active:scale-95"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>{isSeeding ? 'Đang nạp mẫu...' : '⚡ Nạp 7 mục chuẩn Đợt #02'}</span>
+              </button>
+            )}
+
+            {selectedTender?.status === 'open' && (
+              <a
+                href="/nha-cung-cap"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-kyoto-800 hover:text-kyoto-950 flex items-center gap-1 bg-kyoto-50 px-2.5 py-1.5 rounded-lg border border-kyoto-200"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Xem trang chào giá NCC ↗</span>
+              </a>
+            )}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -295,10 +419,11 @@ export default function TenderManagementTab({
             <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200 uppercase tracking-wider text-[11px]">
               <tr>
                 <th className="py-3 px-3">STT</th>
-                <th className="py-3 px-3">Nhóm sản phẩm</th>
-                <th className="py-3 px-3">Thương hiệu</th>
-                <th className="py-3 px-3">Mã Model</th>
-                <th className="py-3 px-3">Tên & Thông số</th>
+                <th className="py-3 px-3">Nhóm</th>
+                <th className="py-3 px-3">Loại</th>
+                <th className="py-3 px-3">Thương hiệu / Nhóm</th>
+                <th className="py-3 px-3">Mã Model / Quy cách</th>
+                <th className="py-3 px-3">Tên & Mô tả thi công</th>
                 <th className="py-3 px-3 text-center">Nhu cầu tham khảo</th>
                 <th className="py-3 px-3 text-center">Thao tác</th>
               </tr>
@@ -306,32 +431,54 @@ export default function TenderManagementTab({
             <tbody className="divide-y divide-gray-100">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-gray-500 font-medium">
-                    Chưa có model nào trong đợt này. Hãy dùng form bên trên để thêm model nhanh!
+                  <td colSpan={8} className="py-12 text-center text-gray-500 font-medium">
+                    Chưa có hạng mục nào trong đợt này. Hãy dùng form bên trên hoặc bấm &quot;Nạp 7 mục chuẩn Đợt #02&quot;!
                   </td>
                 </tr>
               ) : (
                 items.map((it, idx) => {
                   const pConfig = PRODUCTS.find((p) => p.key === it.category_key);
+                  const isService = it.item_type === 'SERVICE_SPEC';
 
                   return (
                     <tr key={it.id} className="hover:bg-gray-50/80 transition-colors font-medium">
                       <td className="py-3 px-3 text-gray-400">{idx + 1}</td>
                       <td className="py-3 px-3 font-semibold text-gray-900 whitespace-nowrap">
-                        <span>{pConfig?.icon} </span>
-                        <span>{pConfig?.name || it.category_key}</span>
+                        <span>{it.category_key === 'safety_net' ? '🛡️' : pConfig?.icon || '📦'} </span>
+                        <span>
+                          {it.category_key === 'safety_net'
+                            ? 'Lưới An Toàn'
+                            : it.category_key === 'curtain'
+                            ? 'Rèm Cửa'
+                            : pConfig?.name || it.category_key}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                            isService
+                              ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                              : 'bg-blue-100 text-blue-900 border border-blue-200'
+                          }`}
+                        >
+                          {isService ? 'Thi công quy cách' : 'Model sản phẩm'}
+                        </span>
                       </td>
                       <td className="py-3 px-3 font-bold text-gray-800">{it.brand}</td>
-                      <td className="py-3 px-3 font-black text-kyoto-900 tracking-wide text-sm font-mono">
+                      <td className="py-3 px-3 font-black text-kyoto-900 tracking-wide text-xs font-mono">
                         {it.model_code}
                       </td>
                       <td className="py-3 px-3 text-gray-600 max-w-xs truncate">
-                        {it.product_name ? <div className="font-medium text-gray-800">{it.product_name}</div> : null}
-                        {it.specifications ? <div className="text-[11px] text-gray-500">{it.specifications}</div> : <span className="text-gray-300">-</span>}
+                        {it.product_name ? <div className="font-semibold text-gray-900">{it.product_name}</div> : null}
+                        {it.specifications ? (
+                          <div className="text-[11px] text-gray-500">{it.specifications}</div>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
                       </td>
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-3 px-3 text-center whitespace-nowrap">
                         <span className="font-extrabold text-kyoto-900 bg-kyoto-50 px-2 py-0.5 rounded border border-kyoto-200">
-                          {it.reference_qty} {pConfig?.unit}
+                          {it.reference_qty} {it.unit || pConfig?.unit || 'bộ'}
                         </span>
                       </td>
                       <td className="py-3 px-3 text-center whitespace-nowrap">
@@ -340,7 +487,7 @@ export default function TenderManagementTab({
                           <button
                             type="button"
                             onClick={() => handleCloneItem(it)}
-                            title="Nhân bản model này để tạo model khác nhanh"
+                            title="Nhân bản hạng mục này"
                             className="p-1.5 rounded-lg text-champagne-700 bg-champagne-50 hover:bg-champagne-100 transition-colors"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -350,7 +497,7 @@ export default function TenderManagementTab({
                           <button
                             type="button"
                             onClick={() => setEditingItem(it)}
-                            title="Sửa thông tin model"
+                            title="Sửa thông tin"
                             className="p-1.5 rounded-lg text-kyoto-800 hover:bg-kyoto-100 transition-colors"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -360,7 +507,7 @@ export default function TenderManagementTab({
                           <button
                             type="button"
                             onClick={() => handleDeleteItem(it.id, it.brand, it.model_code)}
-                            title="Xóa model"
+                            title="Xóa hạng mục"
                             className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -379,7 +526,7 @@ export default function TenderManagementTab({
       {/* Modal: Create New Tender */}
       {showNewTenderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-200">
             <h3 className="text-lg font-black text-gray-900 mb-1 flex items-center gap-2">
               <FolderPlus className="w-5 h-5 text-kyoto-800" />
               <span>Tạo Đợt Mời Chào Giá Mới</span>
@@ -398,7 +545,7 @@ export default function TenderManagementTab({
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   required
-                  placeholder="VD: Đợt #02 - Thiết bị bàn giao tháng 10"
+                  placeholder="VD: Đợt #02 – Rèm cửa • Lưới an toàn • Giàn phơi cư dân Kyoto"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-kyoto-700"
                 />
               </div>
@@ -439,31 +586,39 @@ export default function TenderManagementTab({
       {/* Modal: Edit Single Tender Item */}
       {editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-gray-200">
             <h3 className="text-base font-black text-gray-900 mb-3 flex items-center gap-2">
               <Edit2 className="w-4 h-4 text-kyoto-800" />
-              <span>Chỉnh Sửa Model</span>
+              <span>Chỉnh Sửa Hạng Mục</span>
             </h3>
 
             <form onSubmit={handleSaveItemEdit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Nhóm sản phẩm</label>
-                <select
-                  value={editingItem.category_key}
-                  onChange={(e) => setEditingItem({ ...editingItem, category_key: e.target.value as ProductKey })}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-bold"
-                >
-                  {PRODUCTS.map((p) => (
-                    <option key={p.key} value={p.key}>
-                      {p.icon} {p.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Loại hạng mục</label>
+                  <select
+                    value={editingItem.item_type || 'PRODUCT_MODEL'}
+                    onChange={(e) => setEditingItem({ ...editingItem, item_type: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-bold"
+                  >
+                    <option value="SERVICE_SPEC">Thi công quy cách</option>
+                    <option value="PRODUCT_MODEL">Sản phẩm Model</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Đơn vị tính</label>
+                  <input
+                    type="text"
+                    value={editingItem.unit || 'bộ'}
+                    onChange={(e) => setEditingItem({ ...editingItem, unit: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-bold"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Thương hiệu</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Thương hiệu / Nhóm</label>
                   <input
                     type="text"
                     value={editingItem.brand}
@@ -473,7 +628,7 @@ export default function TenderManagementTab({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Mã Model</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Mã Model / Quy cách</label>
                   <input
                     type="text"
                     value={editingItem.model_code}
@@ -484,33 +639,34 @@ export default function TenderManagementTab({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Nhu cầu tham khảo</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={editingItem.reference_qty}
-                  onChange={(e) => setEditingItem({ ...editingItem, reference_qty: Number(e.target.value) || 1 })}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-bold text-center"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Nhu cầu tham khảo</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={editingItem.reference_qty}
+                    onChange={(e) => setEditingItem({ ...editingItem, reference_qty: Number(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-bold text-center"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Tên hiển thị đầy đủ</label>
+                  <input
+                    type="text"
+                    value={editingItem.product_name || ''}
+                    onChange={(e) => setEditingItem({ ...editingItem, product_name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs font-semibold"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Tên sản phẩm đầy đủ</label>
-                <input
-                  type="text"
-                  value={editingItem.product_name || ''}
-                  onChange={(e) => setEditingItem({ ...editingItem, product_name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Thông số kỹ thuật</label>
-                <input
-                  type="text"
+                <label className="block text-xs font-bold text-gray-700 mb-1">Thông số / Mô tả thi công</label>
+                <textarea
                   value={editingItem.specifications || ''}
                   onChange={(e) => setEditingItem({ ...editingItem, specifications: e.target.value })}
+                  rows={2}
                   className="w-full px-3 py-2 rounded-xl border border-gray-300 text-xs"
                 />
               </div>

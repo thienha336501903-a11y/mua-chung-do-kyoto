@@ -27,16 +27,34 @@ export async function GET(req: NextRequest) {
       'Email',
       'Khu vực',
       'Nhóm sản phẩm',
-      'Hãng',
-      'Mã Model',
-      'Tên sản phẩm',
-      'Giá chào (VNĐ)',
-      'Sẵn hàng',
-      'Số lượng có thể cấp',
+      'Loại hạng mục',
+      'Hãng / Thương hiệu',
+      'Mã Model / Quy cách',
+      'Tên sản phẩm / Hạng mục',
+      'Tên phương án',
+      'Hình thức tính giá',
+      'Giá niêm yết (VNĐ)',
+      'Chiết khấu (%)',
+      'Giá thực tế / Giá so sánh (VNĐ)',
+      'Đơn vị tính',
+      'Sẵn hàng / Thi công',
+      'SL có thể cấp',
       'Gồm VAT',
       'Free Ship',
       'Gồm Lắp đặt',
-      'Bảo hành (tháng)',
+      'Gồm Đo đạc / Khảo sát',
+      'Bảo hành',
+      'Thời gian thi công / Giao',
+      'Vải chính (Rèm)',
+      'Lớp voan (Rèm)',
+      'Quy cách cáp (Lưới AT)',
+      'Đường kính cáp (mm)',
+      'Khoảng cách dây (cm)',
+      'Khung nhôm (Lưới AT)',
+      'Tải trọng (kg)',
+      'Số thanh phơi',
+      'Giá bậc thang theo SL',
+      'Link Catalog / Website',
       'Model thay thế?',
       'Lý do đề xuất thay thế',
       'Ghi chú báo giá',
@@ -54,7 +72,15 @@ export async function GET(req: NextRequest) {
     const tenderTitle = data.tender?.title || 'Đợt chào giá Kyoto';
 
     const rows = data.allQuotes.map((q, idx) => {
-      const categoryName = PRODUCTS.find((p) => p.key === q.category_key)?.name || q.category_key;
+      const categoryName =
+        q.category_key === 'curtain'
+          ? 'Rèm Cửa'
+          : q.category_key === 'safety_net'
+          ? 'Lưới An Toàn'
+          : q.category_key === 'drying_rack'
+          ? 'Giàn Phơi'
+          : PRODUCTS.find((p) => p.key === q.category_key)?.name || q.category_key;
+
       const sub = q.submission || {
         company_name: '',
         contact_person: '',
@@ -62,6 +88,16 @@ export async function GET(req: NextRequest) {
         email: '',
         address_region: '',
       };
+
+      const tierPricingText =
+        Array.isArray(q.tier_pricing) && q.tier_pricing.length > 0
+          ? q.tier_pricing
+              .map(
+                (tp) =>
+                  `${tp.tier_name || ''} (${tp.min_units || 1}-${tp.max_units || 'nhiều'}): ${formatNumber(tp.unit_price)}₫`
+              )
+              .join('; ')
+          : '';
 
       return [
         idx + 1,
@@ -72,16 +108,34 @@ export async function GET(req: NextRequest) {
         escapeCsv(sub.email || ''),
         escapeCsv(sub.address_region || ''),
         escapeCsv(categoryName),
+        escapeCsv(q.item_type === 'SERVICE_SPEC' ? 'Dịch vụ thi công' : 'Sản phẩm model'),
         escapeCsv(q.brand),
         escapeCsv(q.model_code),
         escapeCsv(q.product_name || ''),
-        formatNumber(Number(q.unit_price) || 0),
-        q.stock_status === 'in_stock' ? 'Sẵn hàng' : q.stock_status === 'pre_order' ? 'Đặt trước' : 'Hết hàng',
+        escapeCsv(q.plan_name || ''),
+        escapeCsv(q.pricing_mode === 'catalog_discount' ? 'Chiết khấu catalog' : 'Giá trực tiếp'),
+        q.list_price ? formatNumber(q.list_price) : '',
+        q.discount_percent !== null && q.discount_percent !== undefined ? `${q.discount_percent}%` : '',
+        formatNumber(Number(q.effective_price || q.unit_price) || 0),
+        escapeCsv(q.unit || 'bộ'),
+        q.stock_status === 'in_stock' ? 'Sẵn hàng / Sẵn sàng thi công' : q.stock_status === 'pre_order' ? 'Đặt trước' : 'Hết hàng',
         q.available_qty || 0,
         q.is_vat_included ? 'Có' : 'Không',
         q.is_shipping_included ? 'Có' : 'Không',
         q.is_installation_included ? 'Có' : 'Không',
+        q.is_survey_included ? 'Có' : 'Không',
         q.warranty_months ? `${q.warranty_months} tháng` : '',
+        q.lead_time_days ? `${q.lead_time_days} ngày` : '',
+        escapeCsv(q.fabric_main || ''),
+        escapeCsv(q.fabric_sheer || ''),
+        escapeCsv(q.wire_spec || ''),
+        q.wire_diameter_mm ? `${q.wire_diameter_mm}mm` : '',
+        q.wire_spacing_cm ? `${q.wire_spacing_cm}cm` : '',
+        escapeCsv(q.frame_spec || ''),
+        q.load_capacity_kg ? `${q.load_capacity_kg}kg` : '',
+        q.drying_bars_count ? `${q.drying_bars_count}` : '',
+        escapeCsv(tierPricingText),
+        escapeCsv(q.catalog_url || ''),
         q.is_alternative ? 'Đúng' : 'Không',
         escapeCsv(q.proposal_reason || ''),
         escapeCsv(q.quote_note || ''),

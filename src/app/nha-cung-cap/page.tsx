@@ -5,30 +5,41 @@ import SupplierHeader from '@/components/supplier/SupplierHeader';
 import SupplierQuoteForm from '@/components/supplier/SupplierQuoteForm';
 import Footer from '@/components/Footer';
 import { SupplierTender, SupplierTenderItem } from '@/types/supplier';
-import { Sparkles, Building, ArrowLeft } from 'lucide-react';
+import { Sparkles, Building, ArrowLeft, Layers } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SupplierPublicPage() {
   const [tender, setTender] = useState<SupplierTender | null>(null);
+  const [allOpenTenders, setAllOpenTenders] = useState<SupplierTender[]>([]);
+  const [selectedTenderId, setSelectedTenderId] = useState<string>('');
   const [items, setItems] = useState<SupplierTenderItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadActiveTender() {
-      try {
-        const res = await fetch('/api/supplier/tenders/active');
-        const json = await res.json();
-        if (json.success && json.data) {
-          setTender(json.data.tender);
-          setItems(json.data.items || []);
+  const loadTender = async (targetId?: string) => {
+    try {
+      setLoading(true);
+      const url = targetId ? `/api/supplier/tenders/active?tender_id=${targetId}` : '/api/supplier/tenders/active';
+      const res = await fetch(url);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setTender(json.data.tender);
+        setItems(json.data.items || []);
+        if (json.data.allOpenTenders) {
+          setAllOpenTenders(json.data.allOpenTenders);
         }
-      } catch (err) {
-        console.error('Error fetching active tender:', err);
-      } finally {
-        setLoading(false);
+        if (json.data.tender) {
+          setSelectedTenderId(json.data.tender.id);
+        }
       }
+    } catch (err) {
+      console.error('Error fetching active tender:', err);
+    } finally {
+      setLoading(false);
     }
-    loadActiveTender();
+  };
+
+  useEffect(() => {
+    loadTender();
   }, []);
 
   return (
@@ -36,6 +47,40 @@ export default function SupplierPublicPage() {
       <SupplierHeader />
 
       <main className="flex-1">
+        {/* Tender Switcher Bar if multiple open tenders exist */}
+        {allOpenTenders.length > 1 && (
+          <div className="bg-kyoto-950 text-white py-3 px-4 border-b border-kyoto-800">
+            <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span className="text-xs font-bold text-champagne-300 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5" />
+                <span>Các đợt mời chào giá đang mở:</span>
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {allOpenTenders.map((t) => {
+                  const isSelected = selectedTenderId === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedTenderId(t.id);
+                        loadTender(t.id);
+                      }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                        isSelected
+                          ? 'bg-champagne-400 text-kyoto-950 shadow-sm ring-2 ring-champagne-300'
+                          : 'bg-kyoto-800 text-gray-300 hover:bg-kyoto-700 hover:text-white border border-kyoto-700'
+                      }`}
+                    >
+                      {t.title}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="py-24 text-center">
             <div className="w-8 h-8 border-4 border-kyoto-800 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -61,7 +106,7 @@ export default function SupplierPublicPage() {
             </Link>
           </div>
         ) : (
-          <SupplierQuoteForm tender={tender} items={items} />
+          <SupplierQuoteForm key={tender.id} tender={tender} items={items} />
         )}
       </main>
 

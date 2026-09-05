@@ -23,6 +23,8 @@ import {
   Truck,
   Wrench,
   Flame,
+  ExternalLink,
+  Info,
 } from 'lucide-react';
 
 interface SupplierQuotesComparisonTabProps {
@@ -41,7 +43,7 @@ export default function SupplierQuotesComparisonTab({
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [selectedCategory, setSelectedCategory] = useState<ProductKey | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [onlyShortlisted, setOnlyShortlisted] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [search, setSearch] = useState('');
@@ -79,7 +81,6 @@ export default function SupplierQuotesComparisonTab({
         body: JSON.stringify({ is_shortlisted: newStatus }),
       });
       if (res.ok) {
-        // Refresh quotes
         fetchQuotes(selectedTenderId);
       }
     } catch (err) {
@@ -120,12 +121,15 @@ export default function SupplierQuotesComparisonTab({
         const matchQuoteSupplier = group.quotes.some(
           (q) =>
             q.submission?.company_name.toLowerCase().includes(s) ||
-            q.submission?.contact_person.toLowerCase().includes(s)
+            q.submission?.contact_person.toLowerCase().includes(s) ||
+            (q.plan_name && q.plan_name.toLowerCase().includes(s))
         );
         if (!matchModel && !matchQuoteSupplier) return false;
       }
       if (onlyShortlisted) {
-        const hasShortlisted = group.quotes.some((q) => q.is_shortlisted) || group.alternative_quotes.some((q) => q.is_shortlisted);
+        const hasShortlisted =
+          group.quotes.some((q) => q.is_shortlisted) ||
+          group.alternative_quotes.some((q) => q.is_shortlisted);
         if (!hasShortlisted) return false;
       }
       if (onlyInStock) {
@@ -136,11 +140,16 @@ export default function SupplierQuotesComparisonTab({
     });
   }, [comparisonData, selectedCategory, search, onlyShortlisted, onlyInStock]);
 
-  const totalQuotesCount = comparisonData?.allQuotes.length || 0;
+  // Distinct category keys in current tender
+  const availableCategories = useMemo(() => {
+    if (!comparisonData) return [];
+    const keys = new Set(comparisonData.itemsWithQuotes.map((g) => g.item.category_key));
+    return Array.from(keys);
+  }, [comparisonData]);
 
   return (
     <div className="space-y-6">
-      {/* Top Controls: Tender Picker, Search, Filter & CSV Export */}
+      {/* Top Controls: Tender Picker, Search & CSV Export */}
       <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-card border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -149,7 +158,7 @@ export default function SupplierQuotesComparisonTab({
           <select
             value={selectedTenderId}
             onChange={(e) => setSelectedTenderId(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-gray-300 font-bold text-sm text-gray-900 bg-gray-50 focus:bg-white"
+            className="px-3.5 py-2 rounded-xl border border-gray-300 font-bold text-sm text-gray-900 bg-gray-50 focus:bg-white max-w-md"
           >
             {tenders.map((t) => (
               <option key={t.id} value={t.id}>
@@ -165,7 +174,7 @@ export default function SupplierQuotesComparisonTab({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tìm theo Model, Hãng, Đại lý..."
+              placeholder="Tìm theo Hạng mục, Model, Đại lý..."
               className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-kyoto-700"
             />
           </div>
@@ -197,23 +206,33 @@ export default function SupplierQuotesComparisonTab({
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
             }`}
           >
-            Tất cả ({filteredGroups.length} model)
+            Tất cả ({filteredGroups.length} hạng mục)
           </button>
-          {PRODUCTS.map((p) => {
-            const isCat = selectedCategory === p.key;
+
+          {availableCategories.map((catKey) => {
+            const isCat = selectedCategory === catKey;
+            const pConfig = PRODUCTS.find((p) => p.key === catKey);
+            const label =
+              catKey === 'curtain'
+                ? '🪟 Rèm Cửa'
+                : catKey === 'safety_net'
+                ? '🛡️ Lưới An Toàn'
+                : catKey === 'drying_rack'
+                ? '👕 Giàn Phơi'
+                : `${pConfig?.icon || '📦'} ${pConfig?.name || catKey}`;
+
             return (
               <button
-                key={p.key}
+                key={catKey}
                 type="button"
-                onClick={() => setSelectedCategory(p.key)}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                onClick={() => setSelectedCategory(catKey)}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                   isCat
                     ? 'bg-kyoto-900 text-white shadow-sm'
                     : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
                 }`}
               >
-                <span>{p.icon}</span>
-                <span>{p.name}</span>
+                {label}
               </button>
             );
           })}
@@ -239,22 +258,41 @@ export default function SupplierQuotesComparisonTab({
               onChange={(e) => setOnlyInStock(e.target.checked)}
               className="rounded text-kyoto-700"
             />
-            <span>Chỉ xem Sẵn hàng</span>
+            <span>Chỉ xem Sẵn hàng/Thi công ngay</span>
           </label>
         </div>
       </div>
 
-      {/* Model Cards Comparison Grid */}
+      {/* Comparison Grid */}
       {loading ? (
         <div className="py-20 text-center text-gray-500 font-bold">Đang tải bảng so sánh giá...</div>
       ) : filteredGroups.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-gray-200 shadow-card">
-          <p className="text-gray-500 font-medium">Không tìm thấy model nào khớp với bộ lọc.</p>
+          <p className="text-gray-500 font-medium">Không tìm thấy hạng mục nào khớp với bộ lọc.</p>
         </div>
       ) : (
         <div className="space-y-6">
           {filteredGroups.map((group) => {
             const pConfig = PRODUCTS.find((p) => p.key === group.item.category_key);
+            const isService = group.item.item_type === 'SERVICE_SPEC';
+            const categoryIcon =
+              group.item.category_key === 'safety_net'
+                ? '🛡️'
+                : group.item.category_key === 'curtain'
+                ? '🪟'
+                : group.item.category_key === 'drying_rack'
+                ? '👕'
+                : pConfig?.icon || '📦';
+
+            const categoryTitle =
+              group.item.category_key === 'safety_net'
+                ? 'Lưới An Toàn'
+                : group.item.category_key === 'curtain'
+                ? 'Rèm Cửa'
+                : group.item.category_key === 'drying_rack'
+                ? 'Giàn Phơi'
+                : pConfig?.name || group.item.category_key;
+
             const hasQuotes = group.quotes.length > 0;
             const hasAlternatives = group.alternative_quotes.length > 0;
 
@@ -263,38 +301,49 @@ export default function SupplierQuotesComparisonTab({
                 key={group.item.id}
                 className="bg-white rounded-2xl shadow-card border border-gray-200 overflow-hidden"
               >
-                {/* Model Header */}
+                {/* Header for item */}
                 <div className="bg-gradient-to-r from-kyoto-950 via-kyoto-900 to-kyoto-950 text-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-kyoto-800">
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{pConfig?.icon}</span>
+                    <span className="text-3xl">{categoryIcon}</span>
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-champagne-300 uppercase tracking-wider">
-                          {pConfig?.name} • {group.item.brand}
+                          {categoryTitle} • {group.item.brand}
+                        </span>
+                        <span
+                          className={`text-[10px] font-extrabold px-2 py-0.2 rounded-full ${
+                            isService
+                              ? 'bg-purple-900/60 text-purple-200 border border-purple-400/40'
+                              : 'bg-blue-900/60 text-blue-200 border border-blue-400/40'
+                          }`}
+                        >
+                          {isService ? 'Thi công quy cách' : 'Model sản phẩm'}
                         </span>
                       </div>
                       <h4 className="text-lg sm:text-xl font-black text-white font-mono tracking-tight">
-                        {group.item.model_code}
+                        {group.item.product_name || group.item.model_code}
                       </h4>
-                      {group.item.product_name && (
-                        <p className="text-xs text-gray-300 font-normal">{group.item.product_name}</p>
+                      {group.item.specifications && (
+                        <p className="text-xs text-gray-300 font-normal">{group.item.specifications}</p>
                       )}
                     </div>
                   </div>
 
-                  {/* Right Header Info: Community Demand & Lowest Price */}
+                  {/* Right Header Info: Unit, Reference qty & Lowest Price */}
                   <div className="flex items-center gap-3">
                     <div className="bg-kyoto-800/90 px-3 py-1.5 rounded-xl border border-kyoto-700 text-left">
                       <div className="text-[10px] text-gray-400 font-medium">Nhu cầu tham khảo:</div>
                       <div className="text-sm font-extrabold text-white">
-                        {group.item.reference_qty} {pConfig?.unit}
+                        {group.item.reference_qty} {group.item.unit || 'bộ'}
                       </div>
                     </div>
 
                     {group.lowest_price !== null && (
                       <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-3.5 py-1.5 rounded-xl shadow-md flex items-center gap-1.5 font-black text-xs sm:text-sm animate-pulse">
                         <Award className="w-4 h-4 fill-white" />
-                        <span>GIÁ THẤP NHẤT: {formatNumber(group.lowest_price)}₫</span>
+                        <span>
+                          GIÁ THẤP NHẤT: {formatNumber(group.lowest_price)}₫ / {group.item.unit || 'bộ'}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -304,12 +353,12 @@ export default function SupplierQuotesComparisonTab({
                 <div className="p-4 sm:p-5">
                   <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Building className="w-3.5 h-3.5 text-kyoto-800" />
-                    <span>Báo giá trực tiếp đúng model ({group.quotes.length} nhà cung cấp)</span>
+                    <span>Báo giá trực tiếp ({group.quotes.length} nhà cung cấp / phương án)</span>
                   </div>
 
                   {!hasQuotes ? (
                     <div className="py-6 text-center text-xs text-gray-400 font-medium bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                      Chưa có nhà cung cấp nào gửi báo giá cho model này.
+                      Chưa có đơn vị nào gửi báo giá cho hạng mục này.
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
@@ -317,18 +366,21 @@ export default function SupplierQuotesComparisonTab({
                         <thead className="bg-gray-50 text-gray-600 font-bold border-b border-gray-200 text-[11px] uppercase">
                           <tr>
                             <th className="py-2.5 px-3">Nhà Cung Cấp / Đại Lý</th>
-                            <th className="py-2.5 px-3">Liên Hệ</th>
-                            <th className="py-2.5 px-3 text-right">Giá Chào (VNĐ)</th>
-                            <th className="py-2.5 px-3 text-center">Tình Trạng Hàng</th>
-                            <th className="py-2.5 px-3 text-center">Điều Kiện (VAT/Ship/Lắp)</th>
+                            <th className="py-2.5 px-3">Phương Án / Model</th>
+                            <th className="py-2.5 px-3 text-right">Giá Thực Tế / So Sánh</th>
+                            <th className="py-2.5 px-3">Thông Số & Quy Cách</th>
+                            <th className="py-2.5 px-3 text-center">Bao Gồm (VAT/Lắp/Đo)</th>
                             <th className="py-2.5 px-3 text-center">Bảo Hành</th>
-                            <th className="py-2.5 px-3">Ghi Chú</th>
+                            <th className="py-2.5 px-3">Giá Bậc Thang / Catalog</th>
                             <th className="py-2.5 px-3 text-center">Đánh Giá</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 font-medium">
                           {group.quotes.map((q) => {
                             const sub = q.submission;
+                            const isDiscount = q.pricing_mode === 'catalog_discount';
+                            const effPrice = Number(q.effective_price || q.unit_price);
+
                             return (
                               <tr
                                 key={q.id}
@@ -340,99 +392,149 @@ export default function SupplierQuotesComparisonTab({
                                     : 'hover:bg-gray-50'
                                 }`}
                               >
-                                {/* Company Name */}
+                                {/* 1. Company Name & Contact */}
                                 <td className="py-3 px-3">
                                   <div className="font-extrabold text-gray-900 text-sm">
                                     {sub?.company_name}
+                                  </div>
+                                  <div className="text-xs text-emerald-800 font-bold font-mono">
+                                    📞 {sub?.phone_number} ({sub?.contact_person})
                                   </div>
                                   {sub?.address_region && (
                                     <div className="text-[11px] text-gray-500">{sub.address_region}</div>
                                   )}
                                 </td>
 
-                                {/* Contact Person & Phone */}
+                                {/* 2. Plan Name / Model / Brand */}
                                 <td className="py-3 px-3">
-                                  <div className="font-bold text-gray-800">{sub?.contact_person}</div>
-                                  <div className="text-xs text-emerald-800 font-bold font-mono">
-                                    📞 {sub?.phone_number}
+                                  {q.plan_name ? (
+                                    <div className="font-bold text-kyoto-900 bg-kyoto-50 px-2 py-0.5 rounded border border-kyoto-200 inline-block mb-1">
+                                      {q.plan_name}
+                                    </div>
+                                  ) : null}
+                                  <div className="font-extrabold text-gray-900 text-xs">
+                                    {q.brand} {q.model_code}
                                   </div>
-                                  {sub?.email && (
-                                    <div className="text-[11px] text-gray-500">{sub.email}</div>
+                                  {q.product_name && (
+                                    <div className="text-[11px] text-gray-600">{q.product_name}</div>
                                   )}
                                 </td>
 
-                                {/* Price with Lowest Highlight */}
+                                {/* 3. Effective Price with Breakdown */}
                                 <td className="py-3 px-3 text-right">
                                   <div className="text-base font-black text-kyoto-950 font-mono">
-                                    {formatNumber(Number(q.unit_price))}₫
+                                    {formatNumber(effPrice)}₫ <span className="text-xs font-semibold text-gray-500">/{q.unit || group.item.unit || 'bộ'}</span>
                                   </div>
+                                  {isDiscount && q.list_price && (
+                                    <div className="text-[11px] text-gray-500">
+                                      Gốc: <span className="line-through">{formatNumber(q.list_price)}₫</span> (-{q.discount_percent}%)
+                                    </div>
+                                  )}
                                   {q.is_lowest && (
-                                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-950 border border-amber-300">
+                                    <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-950 border border-amber-300 mt-0.5">
                                       💰 Giá thấp nhất
                                     </span>
                                   )}
                                 </td>
 
-                                {/* Stock Status */}
-                                <td className="py-3 px-3 text-center">
-                                  {q.stock_status === 'in_stock' ? (
-                                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
-                                      Sẵn {q.available_qty}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                                      Đặt trước ({q.lead_time_days || '—'} ngày)
-                                    </span>
+                                {/* 4. Technical Specs (Fabric, Wire, Load, etc.) */}
+                                <td className="py-3 px-3 text-xs max-w-xs">
+                                  {q.fabric_main && (
+                                    <div><strong>Vải chính:</strong> {q.fabric_main}</div>
+                                  )}
+                                  {q.fabric_sheer && (
+                                    <div><strong>Voan:</strong> {q.fabric_sheer}</div>
+                                  )}
+                                  {q.wire_spec && (
+                                    <div><strong>Dây cáp:</strong> {q.wire_spec} {q.wire_diameter_mm ? `(${q.wire_diameter_mm}mm)` : ''}</div>
+                                  )}
+                                  {q.wire_spacing_cm && (
+                                    <div><strong>Khoảng cách:</strong> {q.wire_spacing_cm}cm</div>
+                                  )}
+                                  {q.frame_spec && (
+                                    <div><strong>Khung:</strong> {q.frame_spec}</div>
+                                  )}
+                                  {q.load_capacity_kg && (
+                                    <div><strong>Tải trọng:</strong> {q.load_capacity_kg}kg ({q.drying_bars_count || 2} thanh)</div>
+                                  )}
+                                  {q.material && (
+                                    <div><strong>Vật liệu:</strong> {q.material}</div>
+                                  )}
+                                  {q.quote_note && (
+                                    <div className="text-[11px] text-gray-500 italic mt-0.5">{q.quote_note}</div>
                                   )}
                                 </td>
 
-                                {/* Included Perks: VAT, Ship, Installation */}
+                                {/* 5. Included Perks (VAT, Ship, Install, Survey) */}
                                 <td className="py-3 px-3 text-center">
-                                  <div className="flex items-center justify-center gap-1.5 text-xs">
+                                  <div className="flex flex-wrap items-center justify-center gap-1 text-xs">
                                     <span
-                                      title={q.is_vat_included ? 'Đã gồm VAT' : 'Chưa gồm VAT'}
-                                      className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
-                                        q.is_vat_included
-                                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                                          : 'bg-gray-100 text-gray-400 line-through'
-                                      }`}
-                                    >
-                                      VAT
-                                    </span>
-                                    <span
-                                      title={q.is_shipping_included ? 'Miễn phí vận chuyển' : 'Không free ship'}
-                                      className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
-                                        q.is_shipping_included
-                                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                          : 'bg-gray-100 text-gray-400 line-through'
-                                      }`}
-                                    >
-                                      Ship
-                                    </span>
-                                    <span
-                                      title={q.is_installation_included ? 'Bao gồm lắp đặt' : 'Không kèm lắp đặt'}
                                       className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
                                         q.is_installation_included
                                           ? 'bg-purple-100 text-purple-800 border border-purple-200'
                                           : 'bg-gray-100 text-gray-400 line-through'
                                       }`}
+                                      title={q.is_installation_included ? 'Đã gồm lắp đặt' : 'Không kèm lắp đặt'}
                                     >
                                       Lắp đặt
+                                    </span>
+                                    <span
+                                      className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
+                                        q.is_survey_included !== false
+                                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                          : 'bg-gray-100 text-gray-400 line-through'
+                                      }`}
+                                      title={q.is_survey_included !== false ? 'Đã gồm đo đạc / khảo sát' : 'Không kèm khảo sát'}
+                                    >
+                                      Đo đạc
+                                    </span>
+                                    <span
+                                      className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
+                                        q.is_vat_included
+                                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                          : 'bg-gray-100 text-gray-400 line-through'
+                                      }`}
+                                      title={q.is_vat_included ? 'Đã gồm VAT' : 'Chưa gồm VAT'}
+                                    >
+                                      VAT
                                     </span>
                                   </div>
                                 </td>
 
-                                {/* Warranty */}
-                                <td className="py-3 px-3 text-center text-xs font-semibold text-gray-700">
+                                {/* 6. Warranty */}
+                                <td className="py-3 px-3 text-center text-xs font-semibold text-gray-700 whitespace-nowrap">
                                   {q.warranty_months ? `${q.warranty_months} tháng` : '—'}
                                 </td>
 
-                                {/* Quote Notes */}
-                                <td className="py-3 px-3 text-xs text-gray-600 max-w-xs truncate">
-                                  {q.quote_note || <span className="text-gray-300">-</span>}
+                                {/* 7. Tier Pricing & Catalog Link */}
+                                <td className="py-3 px-3 text-xs max-w-xs">
+                                  {Array.isArray(q.tier_pricing) && q.tier_pricing.length > 0 ? (
+                                    <div className="space-y-0.5 mb-1">
+                                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded">
+                                        Giá theo số lượng căn:
+                                      </span>
+                                      {q.tier_pricing.map((tp, tidx) => (
+                                        <div key={tidx} className="text-[11px] text-gray-700">
+                                          • {tp.tier_name || `${tp.min_units}-${tp.max_units || 'nhiều'} căn`}: <strong>{formatNumber(tp.unit_price)}₫</strong>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : null}
+
+                                  {q.catalog_url && (
+                                    <a
+                                      href={q.catalog_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-kyoto-800 hover:text-kyoto-950 hover:underline"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                      <span>Xem Catalog</span>
+                                    </a>
+                                  )}
                                 </td>
 
-                                {/* Actions: Shortlist & Selected for Contact */}
+                                {/* 8. Actions: Shortlist & Selected For Contact */}
                                 <td className="py-3 px-3 text-center whitespace-nowrap">
                                   <div className="flex items-center justify-center gap-2">
                                     {/* Shortlist Star */}
@@ -495,7 +597,7 @@ export default function SupplierQuotesComparisonTab({
                                     {alt.brand} {alt.model_code}
                                   </span>
                                   <span className="font-black text-base text-emerald-800 font-mono">
-                                    {formatNumber(Number(alt.unit_price))}₫
+                                    {formatNumber(Number(alt.effective_price || alt.unit_price))}₫ /{alt.unit || 'bộ'}
                                   </span>
                                 </div>
                                 {alt.product_name && (
